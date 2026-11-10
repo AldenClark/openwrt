@@ -68,11 +68,26 @@ jobs:
       - name: Build firmware
         run: make -j2
 
-      - name: Verify optimized kernel configuration
-        run: bash airrelay/scripts/check-kernel-config.sh "${{ matrix.device }}"
+      - name: Verify optimized kernel and installed packages
+        shell: bash
+        run: |
+          failed=0
+          bash airrelay/scripts/check-kernel-config.sh "${{ matrix.device }}" || failed=1
+          bash airrelay/scripts/check-image.sh "${{ matrix.device }}" || failed=1
+          exit "$failed"
 
-      - name: Check included packages
-        run: bash airrelay/scripts/check-image.sh "${{ matrix.device }}"
+      - name: Preserve diagnostics if build or verification fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: airrelay-debug-${{ matrix.device }}-${{ github.run_number }}
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
+          path: |
+            build_dir/target-*/linux-airoha_${{ matrix.subtarget }}/linux-*/.config
+            bin/targets/airoha/${{ matrix.subtarget }}/*.manifest
+            bin/targets/airoha/${{ matrix.subtarget }}/*.itb
 
       - name: Prepare release checksums
         shell: bash

@@ -19,10 +19,14 @@ configs=("$repo_root"/build_dir/target-*/linux-airoha_"$subtarget"/linux-*/.conf
 kernel_config="${configs[0]}"
 
 for feature in EXT4_FS MMC USB_SUPPORT NET_SELFTESTS DEBUG_INFO "$usb_phy"; do
-    grep -qx "# CONFIG_${feature} is not set" "$kernel_config" || {
-        echo "Kernel still contains unwanted feature: CONFIG_${feature}" >&2
+    # Kconfig omits symbols that are unavailable on this target. An absent
+    # symbol is disabled, just like "# CONFIG_FOO is not set". Only explicit
+    # y/m selections prove an unwanted feature was built.
+    if grep -Eq "^CONFIG_${feature}=(y|m)$" "$kernel_config"; then
+        grep -E "^CONFIG_${feature}=" "$kernel_config" >&2
+        echo "Kernel unexpectedly enables CONFIG_${feature}" >&2
         exit 1
-    }
+    fi
 done
 for feature in MTD_UBI UBIFS_FS NET_AIROHA NET_DSA PCS_AIROHA HW_RANDOM_AIROHA; do
     grep -qx "CONFIG_${feature}=y" "$kernel_config" || {
