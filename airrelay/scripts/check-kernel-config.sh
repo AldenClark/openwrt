@@ -18,7 +18,7 @@ configs=("$repo_root"/build_dir/target-*/linux-airoha_"$subtarget"/linux-*/.conf
 }
 kernel_config="${configs[0]}"
 
-for feature in EXT4_FS MMC USB_SUPPORT NET_SELFTESTS DEBUG_INFO "$usb_phy"; do
+for feature in EXT4_FS MMC USB_SUPPORT DEBUG_INFO "$usb_phy"; do
     # Kconfig omits symbols that are unavailable on this target. An absent
     # symbol is disabled, just like "# CONFIG_FOO is not set". Only explicit
     # y/m selections prove an unwanted feature was built.

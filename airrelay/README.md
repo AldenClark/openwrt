@@ -32,11 +32,21 @@ The two supported devices are:
 - The upstream NPU/crypto support and necessary PHY/flash drivers are
   intentionally retained pending hardware validation.
 - The Nokia common DTS disables PON PCS. Ethernet PCS remains enabled.
-- Stage 1 removes unused MMC/SD, ext4, USB support and network self-tests
+- Stage 1 removes unused MMC/SD, ext4, USB support and debug features
   from the AN7581/AN7583 kernel configurations, while preserving SPI NAND,
   UBI, Ethernet/PCS, NPU, hardware RNG and watchdog support. These kernel
   configurations are shared by other devices in each OpenWrt subtarget; this
   dedicated fork only builds the Nokia UBI profiles.
+- `NET_SELFTESTS` is retained: Linux 6.18 gives this hidden kernel feature a
+  `PHYLIB` default and the required DSA switch framework also implies it.
+  It provides kernel Ethernet/PHY self-test helpers, not a resident userspace
+  testing service. Removing it would require patching upstream Kconfig and
+  would not yield a meaningful reduction in idle resource use.
+- OpenWrt's top-level `CONFIG_KERNEL_DEBUG_INFO` is explicitly disabled in
+  the MD/MF build profiles. This selects Linux's `CONFIG_DEBUG_INFO_NONE=y`
+  choice: changing only the target kernel fragment is insufficient, since
+  OpenWrt normally enables reduced DWARF debug info for non-small-flash
+  targets.
 - BusyBox is customized to keep `udhcpc` and NTP client functionality while
   dropping DHCP server, cron and NTP server applets. This sets OpenWrt's
   custom-BusyBox (tainted) build flag intentionally.
