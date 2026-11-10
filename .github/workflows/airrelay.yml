@@ -1,0 +1,89 @@
+name: AirRelay OS (MD / MF)
+
+# Deliberately manual: building upstream OpenWrt is resource intensive.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: "AirRelay ${{ matrix.device }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device: md
+            subtarget: an7581
+            model: md
+          - device: mf
+            subtarget: an7583
+            model: mf
+
+    steps:
+      - name: Check out OpenWrt source
+        uses: actions/checkout@v4
+
+      - name: Install OpenWrt build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential bison ccache clang file flex gawk gettext git \
+            libelf-dev libncurses-dev libssl-dev python3 python3-pyelftools \
+            python3-setuptools rsync subversion swig time unzip wget \
+            xz-utils zlib1g-dev zstd
+          df -h .
+
+      - name: Cache source downloads
+        uses: actions/cache@v4
+        with:
+          path: dl
+          key: airrelay-downloads-${{ hashFiles('airrelay/feeds.conf') }}
+
+      - name: Install only the required feeds
+        run: |
+          cp airrelay/feeds.conf feeds.conf
+          ./scripts/feeds update packages luci
+          ./scripts/feeds install -a -p packages
+          ./scripts/feeds install -a -p luci
+
+      - name: Prepare minimal firmware configuration
+        run: bash airrelay/scripts/configure.sh "${{ matrix.device }}"
+
+      - name: Download build inputs
+        run: make download -j2
+
+      - name: Build firmware
+        run: make -j2
+
+      - name: Check included packages
+        run: bash airrelay/scripts/check-image.sh "${{ matrix.device }}"
+
+      - name: Prepare release checksums
+        shell: bash
+        run: |
+          target_dir="bin/targets/airoha/${{ matrix.subtarget }}"
+          cd "$target_dir"
+          shopt -s nullglob
+          images=("openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb" \
+                  "openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb")
+          for artifact in "${images[@]}"; do
+            test -s "$artifact" || { echo "Missing image: $artifact" >&2; exit 1; }
+          done
+          sha256sum "${images[@]}" > AIRRELAY-SHA256SUMS
+
+      - name: Upload firmware and build manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: airrelay-${{ matrix.device }}-${{ github.run_number }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            bin/targets/airoha/${{ matrix.subtarget }}/openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb
+            bin/targets/airoha/${{ matrix.subtarget }}/openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb
+            bin/targets/airoha/${{ matrix.subtarget }}/*.manifest
+            bin/targets/airoha/${{ matrix.subtarget }}/config.buildinfo
+            bin/targets/airoha/${{ matrix.subtarget }}/AIRRELAY-SHA256SUMS

@@ -42,7 +42,8 @@
 };
 
 &pon_pcs {
-	status = "okay";
+	/* The AirRelay images use copper Ethernet only, never the xPON port. */
+	status = "disabled";
 };
 
 &snfi {
