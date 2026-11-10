@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Bootstrap's default runs first. Switch fresh/stock-theme AirRelay images to
+# the dedicated console; keep an explicitly chosen non-stock theme on upgrades.
+current="$(uci -q get luci.main.mediaurlbase)"
+uci -q set luci.themes.AirRelay='/luci-static/airrelay'
+
+case "$current" in
+    ''|/luci-static/bootstrap|/luci-static/bootstrap-dark|/luci-static/bootstrap-light|/luci-static/airrelay)
+        uci -q set luci.main.mediaurlbase='/luci-static/airrelay'
+        ;;
+esac
+
+uci -q commit luci
+exit 0

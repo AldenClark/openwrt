@@ -1,0 +1,2 @@
+{# Keep upstream LuCI authentication handling, including auth plugins and CSRF controls. -#}
+{% include('themes/bootstrap/sysauth') %}

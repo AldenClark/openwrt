@@ -25,8 +25,8 @@ The two supported devices are:
 
 - **Included:** SoC Ethernet / DSA / PHY, NAND/UBI, procd, UCI/ubus, netifd,
   Dropbear, firewall4/nftables IPv4 NAT, kernel WireGuard (`kmod-wireguard`),
-  `wireguard-tools`, and a small LuCI HTTPS UI (admin/status modules,
-  `luci-proto-wireguard`, `uhttpd`, `uhttpd-mod-ubus`, and `px5g-mbedtls`).
+  `wireguard-tools`, and a small LuCI HTTPS UI with the **AirRelay Console**
+  theme, `luci-proto-wireguard`, `uhttpd`, `uhttpd-mod-ubus`, and `px5g-mbedtls`.
 - **Excluded:** DHCP server, PPPoE, Wi-Fi, PON userspace, VoIP, strongSwan,
   AirRoute Core, userspace WireGuard, TUN and TPROXY modules.
 - The upstream NPU/crypto support and necessary PHY/flash drivers are
@@ -54,6 +54,41 @@ The two supported devices are:
   generic `router` baseline forcibly selected dnsmasq/PPP/odhcp packages
   even when a package fragment requested that they be disabled. firewall4
   and nftables are enabled explicitly for our exit-node dataplane.
+
+## AirRelay Console (default web UI)
+
+Both UBI images bundle `luci-theme-airrelay` as the default LuCI theme, with
+just four top-level navigation items:
+
+1. **Realtime status:** system uptime, load, memory, uplink IPv4, four copper
+   port carriers, and *interface-up* state for kernel WireGuard. Status updates
+   every five seconds through existing `ubus` services; no new daemon runs.
+   WireGuard "up" is deliberately **not** reported as a successful handshake.
+2. **Network:** a deliberately constrained LuCI UCI form for the management
+   `br-lan` DHCP client or static IPv4; Save & Apply retains LuCI's network
+   rollback workflow. The existing advanced interface editor remains linked
+   for manual WireGuard setup while the Agent is not integrated.
+3. **Firmware upgrade:** uses upstream LuCI's `system/flash` view, including its
+   image verification and upgrade flow. No parallel firmware upload backend.
+4. **AirRoute Agent:** clearly labeled placeholder for future enrollment,
+   WireGuard peer configuration and health monitoring; no Agent is bundled.
+
+The standard `luci-mod-admin-full` back-end views remain installed for
+development and recovery, but they are **not shown in the AirRelay navigation**.
+This is a UI simplification, **not** a new authorization boundary. The theme
+uses the official Bootstrap form styles as a compatibility fallback and keeps
+LuCI's existing login, ubus RPCs, CSRF protections and password warnings.
+
+If the custom theme cannot render after an upgrade, restore Bootstrap via SSH:
+
+```sh
+uci set luci.main.mediaurlbase='/luci-static/bootstrap'
+uci commit luci
+/etc/init.d/uhttpd reload
+```
+
+Do not expose development LuCI to an untrusted WAN. Set the administrator
+password before deployment; the link remains available from the console.
 
 ## Default network and security posture
 
@@ -105,6 +140,11 @@ make -j2
 bash airrelay/scripts/check-kernel-config.sh md
 bash airrelay/scripts/check-image.sh md
 ```
+
+The dedicated LuCI theme is built from the local
+`package/airrelay/luci-theme-airrelay/` source tree, rather than an additional
+third-party feed. It uses the pinned official LuCI build helpers, so JavaScript
+views and ucode templates are checked and packaged together with the firmware.
 
 `configure.sh` intentionally refuses to overwrite an existing `.config` or
 local `files/` overlay. The version-controlled overlay lives in

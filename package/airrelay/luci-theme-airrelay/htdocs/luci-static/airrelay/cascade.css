@@ -1,0 +1,179 @@
+/* AirRelay OS: retain LuCI's tested form/upgrade widgets, replace its shell. */
+@import url('/luci-static/bootstrap/cascade.css');
+
+:root {
+  color-scheme: light;
+  --ar-bg: #f7f9fc;
+  --ar-panel: #fff;
+  --ar-panel-2: #f8fafc;
+  --ar-ink: #15263c;
+  --ar-muted: #77869b;
+  --ar-line: #e8edf4;
+  --ar-accent: #118b80;
+  --ar-accent-soft: #e7f7f2;
+  --ar-blue: #327bb5;
+  --ar-green: #12917c;
+  --ar-orange: #bf842e;
+  --ar-shadow: 0 5px 24px rgba(30, 62, 101, .025);
+}
+
+html, body.ar-ui { min-height: 100%; }
+body.ar-ui {
+  margin: 0;
+  padding: 0;
+  background: var(--ar-bg);
+  color: var(--ar-ink);
+  font: 14px/1.65 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+body.ar-ui a { color: var(--ar-blue); }
+body.ar-ui a:focus-visible, body.ar-ui button:focus-visible, body.ar-ui input:focus-visible,
+body.ar-ui select:focus-visible { outline: 2px solid var(--ar-accent); outline-offset: 3px; }
+.ar-shell { display: flex; flex-direction: column; min-height: 100vh; }
+.ar-appbar { position: sticky; top: 0; z-index: 20; margin: 0; padding: 0; background: var(--ar-panel); border-bottom: 1px solid var(--ar-line); box-shadow: 0 2px 16px rgba(15, 35, 63, .018); }
+.ar-appbar a { text-shadow: none; }
+.ar-appbar-inner { max-width: 1240px; min-height: 77px; box-sizing: border-box; padding: 0 30px; margin: 0 auto; display: flex; align-items: center; gap: 35px; }
+.ar-brand { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; text-decoration: none !important; }
+.ar-mark { width: 37px; height: 37px; background: #12243c; border-radius: 11px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; padding-bottom: 8px; box-sizing: border-box; transform: rotate(-3deg); }
+.ar-mark span { width: 5px; background: linear-gradient(180deg,#61dbbd,#3797de); border-radius: 5px; transform: rotate(24deg); }
+.ar-mark span:nth-child(1) { height: 10px; }
+.ar-mark span:nth-child(2) { height: 20px; }
+.ar-mark span:nth-child(3) { height: 15px; }
+.ar-brand-copy { display: flex; flex-direction: column; line-height: 1.22; }
+.ar-brand-copy strong { color: var(--ar-ink); font-size: 20px; font-weight: 750; letter-spacing: -.8px; }
+.ar-brand-copy small { font-size: 8px; color: var(--ar-muted); letter-spacing: 1.6px; margin-top: 4px; font-weight: 750; }
+.ar-nav { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
+.ar-nav-item { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; gap: 8px; min-height: 40px; padding: 0 13px; border-radius: 10px; color: var(--ar-muted) !important; white-space: nowrap; font-size: 12px; font-weight: 640; text-decoration: none !important; transition: background .16s, color .16s; }
+.ar-nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+.ar-nav-item:hover { color: var(--ar-ink) !important; background: var(--ar-panel-2); }
+body[data-page^="admin-airrelay-overview"] .ar-nav-status,
+body[data-page^="admin-airrelay-network"] .ar-nav-network,
+body[data-page^="admin-airrelay-upgrade"] .ar-nav-upgrade,
+body[data-page^="admin-airrelay-agent"] .ar-nav-agent {
+  color: #087d71 !important; background: var(--ar-accent-soft); font-weight: 730;
+}
+.ar-nav-soon { display: none; }
+.ar-appbar-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 19px; font-size: 12px; white-space: nowrap; }
+.ar-device-name { display: inline-flex; align-items: center; max-width: 125px; overflow: hidden; text-overflow: ellipsis; color: var(--ar-muted); font-weight: 650; }
+.ar-led { flex: 0 0 auto; width: 7px; height: 7px; background: #1bb893; border-radius: 50%; display: inline-block; margin-right: 9px; box-shadow: 0 0 0 3px #dbf5ed; }
+.ar-logout { font-size: 12px; font-weight: 630; color: var(--ar-muted) !important; text-decoration: none !important; }
+.ar-logout:hover { color: var(--ar-accent) !important; }
+.ar-workspace { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ar-content { box-sizing: border-box; flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 43px 30px 58px; }
+.ar-footer { display: flex; justify-content: space-between; gap: 16px; margin: 0; padding: 17px max(30px,calc((100vw - 1120px)/2)); color: var(--ar-muted); font-size: 11px; border-top: 1px solid var(--ar-line); }
+.ar-footer span { margin: 0; }
+.ar-page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 0 27px; }
+.ar-page-heading h2 { margin: 3px 0 4px; border: 0; padding: 0; font-size: 27px; line-height: 1.35; font-weight: 740; letter-spacing: -.8px; color: var(--ar-ink); }
+.ar-page-heading p { color: var(--ar-muted); margin: 0; font-size: 13px; }
+.ar-eyebrow { color: var(--ar-accent); font-size: 11px; text-transform: uppercase; font-weight: 770; letter-spacing: 1.7px; }
+.ar-freshness { font-size: 11px; color: var(--ar-muted); padding: 8px 12px; border: 1px solid var(--ar-line); background: var(--ar-panel); border-radius: 999px; white-space: nowrap; }
+.ar-freshness:before { content: ''; width: 6px; height: 6px; background: #28b78a; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.ar-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 15px; margin-bottom: 19px; }
+.ar-card { background: var(--ar-panel); border: 1px solid var(--ar-line); border-radius: 17px; padding: 22px; box-shadow: var(--ar-shadow); min-width: 0; }
+.ar-card-label { font-size: 12px; color: var(--ar-muted); font-weight: 650; }
+.ar-card-value { color: var(--ar-ink); font-size: 28px; letter-spacing: -.8px; line-height: 1.4; font-weight: 735; margin-top: 8px; overflow-wrap: anywhere; }
+.ar-card-detail { color: var(--ar-muted); font-size: 11px; margin-top: 3px; min-height: 17px; }
+.ar-card-value.ar-value-up { color: var(--ar-green); }
+.ar-card-value.ar-value-down { color: var(--ar-orange); }
+.ar-panel-grid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 18px; }
+.ar-panel { background: var(--ar-panel); border: 1px solid var(--ar-line); border-radius: 17px; padding: 25px; box-shadow: var(--ar-shadow); min-width: 0; }
+.ar-panel h3 { color: var(--ar-ink); font-size: 16px; font-weight: 740; margin: 0 0 3px; }
+.ar-panel-subtitle { color: var(--ar-muted); font-size: 12px; margin: 0 0 21px; }
+.ar-port-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.ar-port { background: var(--ar-panel-2); border: 1px solid var(--ar-line); border-radius: 12px; padding: 14px 10px; text-align: center; }
+.ar-port-dot { display: block; width: 9px; height: 9px; border-radius: 50%; background: #b7c3d1; margin: 1px auto 9px; }
+.ar-port.is-up .ar-port-dot { background: var(--ar-green); box-shadow: 0 0 0 4px var(--ar-accent-soft); }
+.ar-port strong { display: block; font-size: 12px; color: var(--ar-ink); }
+.ar-port small { display: block; font-size: 10px; margin-top: 3px; color: var(--ar-muted); }
+.ar-kv { display: grid; grid-template-columns: minmax(0, 112px) minmax(0,1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--ar-line); font-size: 12px; }
+.ar-kv:last-child { border-bottom: 0; }
+.ar-kv span:first-child { color: var(--ar-muted); }
+.ar-kv strong { color: var(--ar-ink); font-weight: 660; overflow-wrap: anywhere; }
+.ar-pill { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 8px; font-weight: 690; background: var(--ar-panel-2); border: 1px solid var(--ar-line); color: var(--ar-muted); }
+.ar-pill.is-up { background: var(--ar-accent-soft); border-color: transparent; color: var(--ar-green); }
+.ar-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 23px; }
+.ar-button { padding: 9px 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none !important; border: 1px solid var(--ar-line); border-radius: 10px; background: var(--ar-panel); color: var(--ar-ink) !important; font-size: 12px; font-weight: 690; }
+.ar-button:hover { background: var(--ar-panel-2); }
+.ar-button-primary { background: var(--ar-accent); border-color: var(--ar-accent); color: #fff !important; }
+.ar-button-primary:hover { background: #0d776a; }
+.ar-notice { background: var(--ar-panel); border: 1px solid var(--ar-line); border-left: 3px solid var(--ar-accent); border-radius: 12px; padding: 16px 20px; color: var(--ar-muted); font-size: 12px; margin: 18px 0; }
+.ar-notice strong { color: var(--ar-ink); }
+.ar-agent-hero { background: radial-gradient(circle at 92% 12%,rgba(63,197,162,.15),transparent 38%),var(--ar-panel); padding: 34px; }
+.ar-agent-symbol { background: var(--ar-accent-soft); border-radius: 16px; height: 53px; width: 53px; display: grid; place-items: center; color: var(--ar-accent); font-size: 26px; margin-bottom: 19px; }
+.ar-agent-hero h3 { font-size: 21px; }
+.ar-agent-hero p { color: var(--ar-muted); font-size: 13px; max-width: 650px; }
+.ar-list { list-style: none; margin: 15px 0 0; padding: 0; }
+.ar-list li { padding: 12px 0; border-top: 1px solid var(--ar-line); display: flex; align-items: center; gap: 12px; color: var(--ar-ink); font-size: 13px; }
+.ar-list li:before { content: ''; display: block; flex: 0 0 6px; height: 6px; background: var(--ar-accent); border-radius: 50%; }
+.ar-security-warning { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.ar-security-warning strong { color: inherit; }
+
+/* Adapt original LuCI forms and sysupgrade widgets without reimplementing them. */
+body.ar-ui #maincontent > h2 { color: var(--ar-ink); font-weight: 740; font-size: 26px; border: 0; margin: 3px 0 25px; }
+body.ar-ui .cbi-map, body.ar-ui .cbi-section { border-color: var(--ar-line); }
+body.ar-ui .cbi-map .cbi-section { background: var(--ar-panel); border: 1px solid var(--ar-line); border-radius: 14px; padding: 16px; }
+body.ar-ui .cbi-map h2, body.ar-ui .cbi-map h3 { color: var(--ar-ink); }
+body.ar-ui .cbi-button-positive, body.ar-ui .cbi-button-apply, body.ar-ui .btn.primary { background: var(--ar-accent); border-color: var(--ar-accent); color: #fff; }
+body.ar-ui input:not([type="checkbox"]):not([type="radio"]), body.ar-ui select, body.ar-ui textarea { border-radius: 8px; }
+body.ar-ui .cbi-value-title { font-weight: 590; }
+body.ar-ui .cbi-value-description { color: var(--ar-muted); }
+body.ar-ui .cbi-page-actions { border-top: 1px solid var(--ar-line); margin-top: 22px; padding-top: 20px; }
+body.ar-ui #tabmenu { display: none !important; }
+
+/* Login keeps all upstream LuCI authentication logic, with a focused layout. */
+body.ar-auth { min-height: 100vh; display: grid; place-items: center; padding: 20px; box-sizing: border-box; background: radial-gradient(circle at 20% 20%,rgba(40,184,144,.11),transparent 30%),var(--ar-bg); }
+body.ar-auth > section, body.ar-auth > #view { box-sizing: border-box; width: 100%; max-width: 440px; background: var(--ar-panel); padding: 35px; border: 1px solid var(--ar-line); border-radius: 20px; box-shadow: 0 25px 70px rgba(16,35,67,.09); }
+body.ar-auth > #view { position: absolute; max-width: 440px; }
+body.ar-auth > section:not([hidden]) + #view { display: none; }
+body.ar-auth .cbi-map { border: 0; }
+
+@media (max-width: 1100px) {
+  .ar-appbar-inner { gap: 17px; padding: 0 22px; }
+  .ar-appbar-actions { gap: 10px; }
+  .ar-nav-item { padding: 0 9px; }
+  .ar-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .ar-panel-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .ar-appbar-inner { min-height: 0; flex-wrap: wrap; gap: 0; padding: 13px 20px 11px; }
+  .ar-brand { flex: 1; }
+  .ar-nav { order: 3; flex: 0 0 100%; justify-content: space-between; gap: 4px; padding-top: 12px; overflow-x: auto; }
+  .ar-nav-item { flex: 1 0 auto; min-height: 38px; padding: 0 9px; gap: 7px; font-size: 11px; }
+  .ar-nav-item svg { width: 16px; height: 16px; }
+  .ar-appbar-actions { margin-left: auto; }
+  .ar-content { padding: 30px 22px 42px; }
+  .ar-footer { padding: 15px 22px; }
+}
+@media (max-width: 550px) {
+  .ar-appbar-inner { padding: 12px 14px 9px; }
+  .ar-mark { width: 32px; height: 32px; padding-bottom: 7px; }
+  .ar-brand-copy strong { font-size: 18px; }
+  .ar-brand-copy small { font-size: 7px; }
+  .ar-device-name { display: none; }
+  .ar-nav { padding-top: 12px; }
+  .ar-nav-item { flex-direction: column; justify-content: center; gap: 2px; padding: 6px 3px; line-height: 1.35; font-size: 10px; }
+  .ar-nav-item svg { width: 16px; height: 16px; }
+  .ar-content { padding: 24px 15px 36px; }
+  .ar-page-heading { flex-wrap: wrap; margin-bottom: 19px; }
+  .ar-page-heading h2 { font-size: 23px; }
+  .ar-card { padding: 18px 16px; border-radius: 13px; }
+  .ar-card-value { font-size: 23px; }
+  .ar-grid { gap: 10px; margin-bottom: 12px; }
+  .ar-panel { padding: 19px 17px; border-radius: 14px; }
+  .ar-panel-grid { gap: 12px; }
+  .ar-port-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .ar-footer { padding: 14px 16px; }
+}
+@media (max-width: 360px) {
+  .ar-nav-item { font-size: 9px; }
+  .ar-nav-item svg { width: 15px; height: 15px; }
+  .ar-card-value { font-size: 21px; }
+  .ar-card-label { font-size: 11px; }
+  .ar-footer span:last-child { display: none; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; --ar-bg:#0f1725; --ar-panel:#182336; --ar-panel-2:#202d41; --ar-ink:#e7edf7; --ar-muted:#9eaec3; --ar-line:#2c3b50; --ar-accent:#2ec0a5; --ar-accent-soft:#153c3b; --ar-blue:#72abfb; --ar-green:#44c8a6; --ar-orange:#f3b76a; --ar-shadow:0 12px 35px rgba(0,0,0,.07); }
+  body[data-page^="admin-airrelay-"] .ar-nav-item { color: var(--ar-muted); }
+  body[data-page^="admin-airrelay-overview"] .ar-nav-status, body[data-page^="admin-airrelay-network"] .ar-nav-network, body[data-page^="admin-airrelay-upgrade"] .ar-nav-upgrade, body[data-page^="admin-airrelay-agent"] .ar-nav-agent { color: var(--ar-green) !important; }
+  .ar-led { box-shadow: 0 0 0 3px #16443d; }
+  .ar-mark { background: #102234; }
+}
