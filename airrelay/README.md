@@ -91,7 +91,10 @@ local `files/` overlay. The version-controlled overlay lives in
 The manual GitHub Actions workflow **AirRelay OS (MD / MF)** builds both
 devices. Its artifacts include UBI sysupgrade/recovery images, a package
 manifest, build configuration, and image checksums. It does **not** flash
-hardware, change bootloaders, or publish to GitHub Releases.
+hardware, change bootloaders, or publish to GitHub Releases. GitHub only
+exposes `workflow_dispatch` in its Actions UI after the workflow file is
+merged into the repository's default branch; reviewing this feature branch
+alone does not start a build.
 
 ## Hardware acceptance before deployment
 
