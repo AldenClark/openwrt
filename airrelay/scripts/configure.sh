@@ -28,4 +28,31 @@ mkdir -p files
 cp -a airrelay/overlay/. files/
 make defconfig
 
+# A lean image must not silently fall back to generic router or BusyBox
+# defaults when upstream package names and Kconfig constraints change.
+for feature in \
+    CONFIG_PACKAGE_kmod-wireguard \
+    CONFIG_PACKAGE_wireguard-tools \
+    CONFIG_PACKAGE_luci-mod-admin-full \
+    CONFIG_BUSYBOX_CUSTOM \
+    CONFIG_BUSYBOX_CONFIG_UDHCPC \
+    CONFIG_BUSYBOX_CONFIG_NTPD; do
+    grep -qx "${feature}=y" .config || {
+        echo "Required configuration was not enabled: ${feature}" >&2
+        exit 1
+    }
+done
+for feature in \
+    CONFIG_PACKAGE_dnsmasq \
+    CONFIG_PACKAGE_odhcp6c \
+    CONFIG_BUSYBOX_CONFIG_UDHCPD \
+    CONFIG_BUSYBOX_CONFIG_CROND \
+    CONFIG_BUSYBOX_CONFIG_CRONTAB \
+    CONFIG_BUSYBOX_CONFIG_FEATURE_NTPD_SERVER; do
+    grep -qx "# ${feature} is not set" .config || {
+        echo "Unwanted configuration was enabled: ${feature}" >&2
+        exit 1
+    }
+done
+
 echo "AirRelay ${device^^} configuration ready. Review .config before building."

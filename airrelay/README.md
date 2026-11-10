@@ -32,6 +32,14 @@ The two supported devices are:
 - The upstream NPU/crypto support and necessary PHY/flash drivers are
   intentionally retained pending hardware validation.
 - The Nokia common DTS disables PON PCS. Ethernet PCS remains enabled.
+- Stage 1 removes unused MMC/SD, ext4, USB support and network self-tests
+  from the AN7581/AN7583 kernel configurations, while preserving SPI NAND,
+  UBI, Ethernet/PCS, NPU, hardware RNG and watchdog support. These kernel
+  configurations are shared by other devices in each OpenWrt subtarget; this
+  dedicated fork only builds the Nokia UBI profiles.
+- BusyBox is customized to keep `udhcpc` and NTP client functionality while
+  dropping DHCP server, cron and NTP server applets. This sets OpenWrt's
+  custom-BusyBox (tainted) build flag intentionally.
 
 ## Default network and security posture
 
@@ -81,6 +89,7 @@ cp airrelay/feeds.conf feeds.conf
 bash airrelay/scripts/configure.sh md  # or: mf, in a separate clean checkout
 make download -j2
 make -j2
+bash airrelay/scripts/check-kernel-config.sh md
 bash airrelay/scripts/check-image.sh md
 ```
 
@@ -88,13 +97,16 @@ bash airrelay/scripts/check-image.sh md
 local `files/` overlay. The version-controlled overlay lives in
 `airrelay/overlay/`; OpenWrt normally ignores its build-time `files/` folder.
 
-The manual GitHub Actions workflow **AirRelay OS (MD / MF)** builds both
+The GitHub Actions workflow **AirRelay OS (MD / MF)** builds both
 devices. Its artifacts include UBI sysupgrade/recovery images, a package
-manifest, build configuration, and image checksums. It does **not** flash
-hardware, change bootloaders, or publish to GitHub Releases. GitHub only
-exposes `workflow_dispatch` in its Actions UI after the workflow file is
-merged into the repository's default branch; reviewing this feature branch
-alone does not start a build.
+manifest, build configuration, and image checksums. It publishes a unique
+**prerelease** with MD and MF images only when **both** device builds pass.
+It does **not** flash hardware or change bootloaders. A one-time push
+trigger on this feature branch uses `airrelay/.build-request`; normal manual
+`workflow_dispatch` becomes available in the Actions UI after the workflow
+is merged into the repository's default branch. Download firmware from the
+repository's **Releases** page; every prerelease has its own source commit,
+per-device checksums and build metadata.
 
 ## Hardware acceptance before deployment
 

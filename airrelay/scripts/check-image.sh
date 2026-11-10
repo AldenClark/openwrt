@@ -35,7 +35,7 @@ for name in kmod-wireguard wireguard-tools firewall4 luci-mod-admin-full \
 done
 
 for name in dnsmasq dnsmasq-full odhcpd-ipv6only ppp ppp-mod-pppoe \
-            kmod-tun kmod-nft-tproxy strongswan; do
+            odhcp6c kmod-tun kmod-nft-tproxy strongswan kmod-usb3; do
     if has_package "$name"; then
         echo "Unexpected package included: $name" >&2
         exit 1

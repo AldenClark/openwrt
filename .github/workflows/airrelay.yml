@@ -1,8 +1,15 @@
 name: AirRelay OS (MD / MF)
 
-# Deliberately manual: building upstream OpenWrt is resource intensive.
+# Manual dispatch remains available after merging into the default branch.
+# A single build-request change permits an initial build from this feature
+# branch without changing or merging main.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/airrelay-minimal
+    paths:
+      - airrelay/.build-request
 
 permissions:
   contents: read
@@ -53,11 +60,17 @@ jobs:
       - name: Prepare minimal firmware configuration
         run: bash airrelay/scripts/configure.sh "${{ matrix.device }}"
 
+      - name: Show disk space before build
+        run: df -h .
+
       - name: Download build inputs
         run: make download -j2
 
       - name: Build firmware
         run: make -j2
+
+      - name: Verify optimized kernel configuration
+        run: bash airrelay/scripts/check-kernel-config.sh "${{ matrix.device }}"
 
       - name: Check included packages
         run: bash airrelay/scripts/check-image.sh "${{ matrix.device }}"
@@ -73,7 +86,10 @@ jobs:
           for artifact in "${images[@]}"; do
             test -s "$artifact" || { echo "Missing image: $artifact" >&2; exit 1; }
           done
-          sha256sum "${images[@]}" > AIRRELAY-SHA256SUMS
+          sha256sum "${images[@]}" > "AIRRELAY-${{ matrix.model }}-SHA256SUMS"
+          if [[ -s config.buildinfo ]]; then
+            cp config.buildinfo "airrelay-${{ matrix.model }}.config.buildinfo"
+          fi
 
       - name: Upload firmware and build manifest
         uses: actions/upload-artifact@v4
@@ -85,5 +101,40 @@ jobs:
             bin/targets/airoha/${{ matrix.subtarget }}/openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb
             bin/targets/airoha/${{ matrix.subtarget }}/openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb
             bin/targets/airoha/${{ matrix.subtarget }}/*.manifest
-            bin/targets/airoha/${{ matrix.subtarget }}/config.buildinfo
-            bin/targets/airoha/${{ matrix.subtarget }}/AIRRELAY-SHA256SUMS
+            bin/targets/airoha/${{ matrix.subtarget }}/airrelay-${{ matrix.model }}.config.buildinfo
+            bin/targets/airoha/${{ matrix.subtarget }}/AIRRELAY-${{ matrix.model }}-SHA256SUMS
+
+  release:
+    name: Publish AirRelay prerelease
+    needs: firmware
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download both verified firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: airrelay-*
+          path: release-input
+
+      - name: Create immutable prerelease for this build
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' assets < <(
+            find release-input -type f \( -name '*.itb' -o -name '*.manifest' -o \
+              -name '*.buildinfo' -o -name '*SHA256SUMS' \) -print0
+          )
+          test "${#assets[@]}" -ge 8 || {
+            echo "Both devices must produce images, checksums and manifests." >&2
+            exit 1
+          }
+          tag="airrelay-dev-${{ github.run_id }}-${{ github.run_attempt }}"
+          gh release create "$tag" "${assets[@]}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "AirRelay OS (MD/MF) #${{ github.run_number }}" \
+            --notes "Development images for Nokia XG-040G-MD (AN7581) and XG-040G-MF (AN7583). Kernel WireGuard, no PON, LuCI retained. UBI boot layout ONLY: do not flash stock NAND partitions. Source: $GITHUB_SHA" \
+            --prerelease
