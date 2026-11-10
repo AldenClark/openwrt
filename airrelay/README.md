@@ -26,7 +26,7 @@ The two supported devices are:
 - **Included:** SoC Ethernet / DSA / PHY, NAND/UBI, procd, UCI/ubus, netifd,
   Dropbear, firewall4/nftables IPv4 NAT, kernel WireGuard (`kmod-wireguard`),
   `wireguard-tools`, and a small LuCI HTTPS UI (admin/status modules,
-  `uhttpd`, `uhttpd-mod-ubus`, and `px5g-mbedtls`).
+  `luci-proto-wireguard`, `uhttpd`, `uhttpd-mod-ubus`, and `px5g-mbedtls`).
 - **Excluded:** DHCP server, PPPoE, Wi-Fi, PON userspace, VoIP, strongSwan,
   AirRoute Core, userspace WireGuard, TUN and TPROXY modules.
 - The upstream NPU/crypto support and necessary PHY/flash drivers are
@@ -97,7 +97,7 @@ revisions in `airrelay/feeds.conf`.
 ```sh
 cp airrelay/feeds.conf feeds.conf
 ./scripts/feeds update packages luci
-./scripts/feeds install -p luci luci-mod-admin-full luci-theme-bootstrap
+./scripts/feeds install -p luci luci-mod-admin-full luci-theme-bootstrap luci-proto-wireguard
 
 bash airrelay/scripts/configure.sh md  # or: mf, in a separate clean checkout
 make download -j2

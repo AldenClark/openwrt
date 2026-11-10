@@ -27,6 +27,7 @@ has_package() {
 }
 
 for name in kmod-wireguard wireguard-tools firewall4 luci-mod-admin-full \
+            luci-proto-wireguard luci-lib-uqr resolveip \
             luci-theme-bootstrap uhttpd uhttpd-mod-ubus px5g-mbedtls dropbear; do
     if ! has_package "$name"; then
         echo "Required package missing: $name" >&2

@@ -34,6 +34,7 @@ for feature in \
     CONFIG_PACKAGE_kmod-wireguard \
     CONFIG_PACKAGE_wireguard-tools \
     CONFIG_PACKAGE_luci-mod-admin-full \
+    CONFIG_PACKAGE_luci-proto-wireguard \
     CONFIG_BUSYBOX_CUSTOM \
     CONFIG_BUSYBOX_CONFIG_UDHCPC \
     CONFIG_BUSYBOX_CONFIG_NTPD; do
