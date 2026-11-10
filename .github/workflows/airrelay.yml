@@ -60,6 +60,8 @@ jobs:
         run: |
           set -e
           console=package/airrelay/luci-theme-airrelay
+          # include/scan.mk requires a BuildPackage discovery signature.
+          grep -q 'call BuildPackage' "$console/Makefile"
           python3 -m json.tool "$console/root/usr/share/luci/menu.d/airrelay-console.json" > /dev/null
           python3 -m json.tool "$console/root/usr/share/rpcd/acl.d/luci-theme-airrelay.json" > /dev/null
           sh -n "$console/root/etc/uci-defaults/95_luci-theme-airrelay"

@@ -14,3 +14,7 @@ PKG_LICENSE:=Apache-2.0
 PKG_MAINTAINER:=AirRelay Project
 
 include $(TOPDIR)/feeds/luci/luci.mk
+
+# OpenWrt's include/scan.mk discovers package directories by this signature,
+# even when a helper include invokes BuildPackage on the package's behalf.
+# call BuildPackage - OpenWrt buildroot signature
