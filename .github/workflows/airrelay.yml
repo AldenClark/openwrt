@@ -54,8 +54,7 @@ jobs:
         run: |
           cp airrelay/feeds.conf feeds.conf
           ./scripts/feeds update packages luci
-          ./scripts/feeds install -a -p packages
-          ./scripts/feeds install -a -p luci
+          ./scripts/feeds install -p luci luci-mod-admin-full luci-theme-bootstrap
 
       - name: Prepare minimal firmware configuration
         run: bash airrelay/scripts/configure.sh "${{ matrix.device }}"

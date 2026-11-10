@@ -40,6 +40,10 @@ The two supported devices are:
 - BusyBox is customized to keep `udhcpc` and NTP client functionality while
   dropping DHCP server, cron and NTP server applets. This sets OpenWrt's
   custom-BusyBox (tainted) build flag intentionally.
+- Both Airoha subtargets use OpenWrt's `DEVICE_TYPE=basic` baseline. The
+  generic `router` baseline forcibly selected dnsmasq/PPP/odhcp packages
+  even when a package fragment requested that they be disabled. firewall4
+  and nftables are enabled explicitly for our exit-node dataplane.
 
 ## Default network and security posture
 
@@ -83,8 +87,7 @@ revisions in `airrelay/feeds.conf`.
 ```sh
 cp airrelay/feeds.conf feeds.conf
 ./scripts/feeds update packages luci
-./scripts/feeds install -a -p packages
-./scripts/feeds install -a -p luci
+./scripts/feeds install -p luci luci-mod-admin-full luci-theme-bootstrap
 
 bash airrelay/scripts/configure.sh md  # or: mf, in a separate clean checkout
 make download -j2

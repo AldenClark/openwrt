@@ -1,3 +1,3 @@
 # One-time push build request for feature/airrelay-minimal.
 # No further push-triggered build runs occur unless this file changes.
-stage1=2026-11-10
+stage1=2026-11-10-rerun-config
