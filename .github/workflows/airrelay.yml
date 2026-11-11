@@ -70,6 +70,7 @@ jobs:
             node --check "$source"
           done
           node airrelay/scripts/test-console-modules.cjs
+          node airrelay/scripts/test-console-upgrade.cjs
           msgfmt --check --output-file=/dev/null "$console/po/zh_Hans/airrelay.po"
           if grep -q '/luci-static/bootstrap' "$console/htdocs/luci-static/airrelay/cascade.css"; then
             echo 'AirRelay skin must not import Bootstrap CSS' >&2

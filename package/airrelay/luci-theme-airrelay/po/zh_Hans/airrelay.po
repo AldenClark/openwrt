@@ -317,6 +317,9 @@ msgstr "正在校验镜像与设备的兼容性。"
 msgid "Welcome back"
 msgstr "欢迎回来"
 
+msgid "Without preserved settings, the management IP may change because AirRelay OS obtains its address via DHCP."
+msgstr "如果不保留现有配置，AirRelay OS 会通过 DHCP 获取管理地址，升级后 IP 可能发生变化。"
+
 msgid "WireGuard"
 msgstr "WireGuard"
 

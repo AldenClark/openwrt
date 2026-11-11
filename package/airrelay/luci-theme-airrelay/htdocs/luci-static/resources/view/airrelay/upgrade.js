@@ -13,21 +13,18 @@ const validateImage = rpc.declare({
 const firmwarePath = '/tmp/firmware.bin';
 
 return view.extend({
-  load() {
-    return L.resolveDefault(fs.stat('/lib/upgrade/platform.sh'), {});
-  },
-
-  handleUpload(ev) {
-    const button = ev.currentTarget;
-    button.disabled = true;
-
+  handleUpload() {
+    // Do not gate the file picker on a best-effort filesystem stat or the
+    // frontend view permission hint. The upload RPC enforces authorization,
+    // and validate_firmware_image + sysupgrade --test enforce compatibility.
+    // An unavailable stat must never silently disable the only page action.
     return ui.uploadFile(firmwarePath)
       .then(async image => {
         ui.showModal(_('Checking firmware…'), [ E('p', { class: 'spinning' }, _('Validating compatibility with this device.')) ]);
         const validation = await validateImage(firmwarePath);
         const test = await fs.exec('/sbin/sysupgrade', [ '--test', firmwarePath ]);
 
-        if (!validation.valid || test.code !== 0) {
+        if (validation.valid !== true || test.code !== 0) {
           ui.showModal(_('Firmware not supported'), [
             E('p', { class: 'alert-message danger' }, _('The firmware cannot be safely installed on this device. Choose the matching MD or MF sysupgrade image.')),
             test.stderr ? E('pre', { class: 'ar-upgrade-error' }, test.stderr) : '',
@@ -49,6 +46,7 @@ return view.extend({
           ]),
           E('label', { class: 'ar-upgrade-keep' }, [ keep, _('Keep current settings') ]),
           !canKeep ? E('p', { class: 'ar-muted' }, _('This image cannot preserve existing settings.')) : '',
+          E('p', { class: 'ar-muted' }, _('Without preserved settings, the management IP may change because AirRelay OS obtains its address via DHCP.')),
           E('div', { class: 'ar-modal-actions' }, [
             E('button', { class: 'btn', click: ui.createHandlerFn(this, 'cancelUpload') }, _('Cancel')),
             E('button', {
@@ -61,10 +59,13 @@ return view.extend({
       })
       .catch(err => {
         ui.hideModal();
-        if (!/cancel/i.test(err.message || ''))
+        if (!/cancel|取消/i.test(err.message || '')) {
+          // The upload may have completed before the validation RPC failed.
+          // Release the firmware-sized tmpfs allocation on that path.
+          fs.remove(firmwarePath).catch(() => {});
           ui.addNotification(null, E('p', {}, err.message || _('Firmware upload failed.')));
-      })
-      .finally(() => { button.disabled = false; });
+        }
+      });
   },
 
   cancelUpload() {
@@ -78,15 +79,27 @@ return view.extend({
 
     const args = keep.checked ? [ firmwarePath ] : [ '-n', firmwarePath ];
     // The sysupgrade process intentionally ends the web request when rebooting.
-    fs.exec('/sbin/sysupgrade', args).catch(err => {
-      ui.addNotification(null, E('p', {}, err.message || _('Firmware upgrade command failed.')));
+    fs.exec('/sbin/sysupgrade', args).then(result => {
+      if (result.code !== 0)
+        ui.showModal(_('Firmware upgrade command failed.'), [
+          E('p', { class: 'alert-message danger' }, result.stderr || _('Firmware upgrade command failed.')),
+          E('div', { class: 'ar-modal-actions' }, E('button', {
+            class: 'btn', click: ui.createHandlerFn(this, 'cancelUpload')
+          }, _('Close')))
+        ]);
+    }).catch(err => {
+      // A successful flash closes the RPC connection. Only a definite access
+      // failure proves that sysupgrade was not started.
+      if (/access denied|permission denied/i.test(err.message || ''))
+        ui.showModal(_('Firmware upgrade command failed.'), [
+          E('p', { class: 'alert-message danger' }, err.message)
+        ]);
     });
-    if (keep.checked) ui.awaitReconnect(window.location.host);
-    else ui.awaitReconnect(window.location.host, '192.168.1.1');
+    // A clean upgrade may change the management address (DHCP, not 192.168.1.1).
+    ui.awaitReconnect(window.location.host);
   },
 
-  render(platform) {
-    const available = platform?.type === 'file';
+  render() {
     return E('div', { class: 'ar-upgrade-page' }, [
       E('div', { class: 'ar-page-heading' }, [
         E('div', {}, [
@@ -101,10 +114,8 @@ return view.extend({
         E('p', { class: 'ar-muted' }, _('Choose the sysupgrade image for this exact device model (XG-040G-MD or XG-040G-MF). The file is checked before installation.')),
         E('button', {
           class: 'btn cbi-button-action important ar-upgrade-button',
-          disabled: !available || !L.hasViewPermission(),
           click: ui.createHandlerFn(this, 'handleUpload')
-        }, _('Choose firmware…')),
-        !available ? E('p', { class: 'alert-message warning' }, _('Firmware upgrade is unavailable in this boot environment.')) : ''
+        }, _('Choose firmware…'))
       ])
     ]);
   },
