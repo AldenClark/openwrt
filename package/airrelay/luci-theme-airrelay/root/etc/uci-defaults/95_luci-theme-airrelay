@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# AirRelay is the only packaged theme. Also migrate older retained PonWrt/LuCI
+# settings on a sysupgrade so they cannot reference a removed theme.
+uci -q set luci.themes.AirRelay='/luci-static/airrelay'
+uci -q delete luci.themes.Bootstrap
+uci -q delete luci.themes.BootstrapDark
+uci -q delete luci.themes.BootstrapLight
+uci -q set luci.main.mediaurlbase='/luci-static/airrelay'
+
+case "$(uci -q get luci.main.lang)" in
+    en|zh-cn) ;;
+    *) uci -q set luci.main.lang='zh-cn' ;;
+esac
+
+uci -q commit luci
+
+# A sysupgrade preserving settings can also preserve the previous distro's
+# hostname. Only rename known stock names, never a user-chosen hostname.
+old_hostname="$(uci -q get system.@system[0].hostname | tr '[:upper:]' '[:lower:]')"
+case "$old_hostname" in
+    ''|openwrt|ponwrt)
+        uci -q set system.@system[0].hostname='airrelay-node'
+        uci -q commit system
+        ;;
+esac
+exit 0

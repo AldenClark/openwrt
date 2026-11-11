@@ -1,0 +1,57 @@
+{# SPDX-License-Identifier: Apache-2.0 -#}
+{# Native LuCI POST/auth plugin flow; independent from the Bootstrap theme. -#}
+{% include('header', { blank_page: true }) %}
+
+<div class="ar-login-wrap">
+    <div class="ar-login-icon" aria-hidden="true">
+        <span class="ar-login-icon-line"></span><span class="ar-login-icon-line"></span><span class="ar-login-icon-line"></span>
+    </div>
+    <div class="ar-login-brand">AirRelay <span>OS</span></div>
+    <div class="ar-login-subbrand">{{ _('EDGE NODE CONSOLE') }}</div>
+
+    <h1>{{ _('Welcome back') }}</h1>
+    <p class="ar-login-intro">{{ _('Sign in to manage your edge node.') }}</p>
+
+    {% if (fuser): %}
+        <div class="alert-message danger" role="alert">{{ _('Invalid username and/or password! Please try again.') }}</div>
+    {% endif %}
+    {% if (auth_message): %}
+        <div class="alert-message warning" role="alert">{{ auth_message }}</div>
+    {% endif %}
+
+    <form method="post" class="ar-login-form">
+        <label for="luci_username">{{ _('Username') }}</label>
+        <input id="luci_username" name="luci_username" type="text" autocomplete="username" value="{{ entityencode(duser, true) }}" required autofocus>
+
+        <label for="luci_password">{{ _('Password') }}</label>
+        <input id="luci_password" name="luci_password" type="password" autocomplete="current-password">
+
+        {% if (auth_fields): %}
+            {% for (let field in auth_fields): %}
+                <label for="{{ field.name }}">{{ _(field.label ?? field.name) }}</label>
+                <input name="{{ field.name }}" id="{{ field.name }}"
+                       type="{{ field.type ?? 'text' }}"
+                       {% if (field.placeholder): %}placeholder="{{ field.placeholder }}"{% endif %}
+                       {% if (field.inputmode): %}inputmode="{{ field.inputmode }}"{% endif %}
+                       {% if (field.pattern): %}pattern="{{ field.pattern }}"{% endif %}
+                       {% if (field.maxlength): %}maxlength="{{ field.maxlength }}"{% endif %}
+                       {% if (field.autocomplete): %}autocomplete="{{ field.autocomplete }}"{% endif %}
+                       {% if (field.required): %}required{% endif %}>
+            {% endfor %}
+        {% endif %}
+
+        {% if (auth_html): %}<div class="ar-auth-extra">{{ auth_html }}</div>{% endif %}
+        {% if (auth_assets): %}
+            {% for (let asset in auth_assets): %}
+                {% if (asset.type == 'script'): %}<script src="{{ asset.src }}"></script>{% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <button type="submit" class="ar-login-submit">{{ _('Log in') }} <span aria-hidden="true">→</span></button>
+    </form>
+
+    <div class="ar-login-bottom">{{ _('A private console for your edge network') }}</div>
+</div>
+<div class="ar-login-copyright">AirRelay OS · {{ _('Secure node management') }}</div>
+
+{% include('footer', { blank_page: true }) %}

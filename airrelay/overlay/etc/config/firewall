@@ -1,0 +1,68 @@
+# AirRelay OS: IPv4 WireGuard exit-node policy.
+# The Agent will create the UCI network interface named "wg0".
+# No WAN/LAN routing mode is provided: all copper ports remain in br-lan.
+
+config defaults
+	option input 'REJECT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	option synflood_protect '1'
+
+config zone
+	option name 'uplink'
+	list network 'lan'
+	option input 'REJECT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	option masq '1'
+	option mtu_fix '1'
+
+config zone
+	option name 'tunnel'
+	list network 'wg0'
+	option input 'REJECT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+
+config forwarding
+	option src 'tunnel'
+	option dest 'uplink'
+
+# DHCP replies to the bridge's DHCP client (no DHCP server is included).
+config rule
+	option name 'Allow-Uplink-DHCP-Reply'
+	option src 'uplink'
+	option family 'ipv4'
+	option proto 'udp'
+	option src_port '67'
+	option dest_port '68'
+	option target 'ACCEPT'
+
+# During development, enable SSH and LuCI HTTPS from RFC1918 management LANs.
+# A production image should restrict these rules to the enrolled admin network.
+config rule
+	option name 'Allow-Management-10'
+	option src 'uplink'
+	option family 'ipv4'
+	option src_ip '10.0.0.0/8'
+	option proto 'tcp'
+	option dest_port '22 443'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-Management-172'
+	option src 'uplink'
+	option family 'ipv4'
+	option src_ip '172.16.0.0/12'
+	option proto 'tcp'
+	option dest_port '22 443'
+	option target 'ACCEPT'
+
+config rule
+	option name 'Allow-Management-192'
+	option src 'uplink'
+	option family 'ipv4'
+	option src_ip '192.168.0.0/16'
+	option proto 'tcp'
+	option dest_port '22 443'
+	option target 'ACCEPT'

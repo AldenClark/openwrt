@@ -1,0 +1,330 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "%d / %d up"
+msgstr "%d / %d 个已启动"
+
+msgid "%d Mb/s"
+msgstr "%d Mb/s"
+
+msgid "%d d %d h"
+msgstr "%d 天 %d 小时"
+
+msgid "%d h %d m"
+msgstr "%d 小时 %d 分钟"
+
+msgid "1-minute average"
+msgstr "最近 1 分钟平均负载"
+
+msgid "A private console for your edge network"
+msgstr "专属于边缘网络的轻量控制台"
+
+msgid "Apply configuration atomically with rollback"
+msgstr "原子应用配置，异常时自动回滚"
+
+msgid "Automatic (DHCP client)"
+msgstr "自动获取（DHCP 客户端）"
+
+msgid "CONTROL PLANE"
+msgstr "控制平面"
+
+msgid "Calculated using available memory"
+msgstr "根据可用内存计算"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Changing the management IP may interrupt this browser session. Confirm Save & Apply or allow automatic rollback."
+msgstr "修改管理 IP 可能导致当前页面暂时失联。请确认“保存并应用”，否则配置将自动回滚。"
+
+msgid "Checking firmware…"
+msgstr "正在检查固件…"
+
+msgid "Checking…"
+msgstr "正在检测…"
+
+msgid "Choose firmware…"
+msgstr "选择固件…"
+
+msgid "Choose the sysupgrade image for this exact device model (XG-040G-MD or XG-040G-MF). The file is checked before installation."
+msgstr "请选择与设备型号（XG-040G-MD 或 XG-040G-MF）完全对应的 sysupgrade 固件。刷写前会检查兼容性。"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Cloud registration, configuration sync and live status will appear here."
+msgstr "这里将集中展示云端注册、配置同步及运行状态。"
+
+msgid "Configuration changes will not persist. Install a supported firmware image."
+msgstr "当前配置无法持久保存，请安装适配设备的正式固件。"
+
+msgid "Configure only the device management address. The four Ethernet ports remain bridged; this node does not serve DHCP."
+msgstr "这里只配置设备自身的管理地址。四个网口继续桥接；本机不提供 DHCP 服务。"
+
+msgid "Confirm firmware upgrade"
+msgstr "确认固件升级"
+
+msgid "Connected"
+msgstr "已连接"
+
+msgid "Connection safety: "
+msgstr "连接保护："
+
+msgid "DNS servers"
+msgstr "DNS 服务器"
+
+msgid "Default gateway"
+msgstr "默认网关"
+
+msgid "Device"
+msgstr "设备"
+
+msgid "Device information"
+msgstr "设备信息"
+
+msgid "Disconnected"
+msgstr "未连接"
+
+msgid "Download"
+msgstr "下行流量"
+
+msgid "EDGE NODE CONSOLE"
+msgstr "边缘节点控制台"
+
+msgid "Ethernet ports"
+msgstr "以太网端口"
+
+msgid "Firmware"
+msgstr "固件版本"
+
+msgid "Firmware not supported"
+msgstr "固件不兼容"
+
+msgid "Firmware upgrade"
+msgstr "系统升级"
+
+msgid "Firmware upgrade command failed."
+msgstr "固件升级命令执行失败。"
+
+msgid "Firmware upgrade is unavailable in this boot environment."
+msgstr "当前启动环境不支持系统升级。"
+
+msgid "Firmware upload failed."
+msgstr "固件上传失败。"
+
+msgid "Flashing in progress. Do not power off the device. The console will reconnect after reboot."
+msgstr "正在刷写固件，切勿断电。设备重启后控制台会尝试重新连接。"
+
+msgid "Gateway"
+msgstr "网关"
+
+msgid "IPv4 address"
+msgstr "IPv4 地址"
+
+msgid "IPv4 address mode"
+msgstr "IPv4 地址获取方式"
+
+msgid "Install a verified AirRelay OS firmware image."
+msgstr "安装通过校验的 AirRelay OS 固件。"
+
+msgid "Install firmware"
+msgstr "开始升级"
+
+msgid "Installing firmware…"
+msgstr "正在升级固件…"
+
+msgid "Interface down"
+msgstr "接口未启动"
+
+msgid "Interface up"
+msgstr "接口已启动"
+
+msgid "Interface up, not peer handshake"
+msgstr "仅表示接口启动，不代表对端握手成功"
+
+msgid "Invalid username and/or password! Please try again."
+msgstr "用户名或密码错误，请重试。"
+
+msgid "JavaScript is required for this console."
+msgstr "此控制台需要启用 JavaScript。"
+
+msgid "Keep current settings"
+msgstr "保留当前设置"
+
+msgid "Kernel"
+msgstr "内核版本"
+
+msgid "Language"
+msgstr "界面语言"
+
+msgid "Live interface status and kernel traffic counters. Settings are managed by AirRoute Agent."
+msgstr "只读显示接口实时状态及内核流量计数。接口配置将由 AirRoute Agent 管理。"
+
+msgid "Live status"
+msgstr "实时状态"
+
+msgid "Loading status…"
+msgstr "正在读取状态…"
+
+msgid "Local readings refreshed every 5 seconds. No background monitoring service."
+msgstr "每 5 秒更新本机指标，不启动额外常驻监控服务。"
+
+msgid "Log in"
+msgstr "登录"
+
+msgid "Log out"
+msgstr "退出"
+
+msgid "Main navigation"
+msgstr "主导航"
+
+msgid "Management IP and read-only WireGuard status"
+msgstr "管理 IP 设置与 WireGuard 只读状态"
+
+msgid "Management IPv4"
+msgstr "管理 IPv4"
+
+msgid "Management connection"
+msgstr "管理上联"
+
+msgid "Management interface and firmware"
+msgstr "管理接口与固件信息"
+
+msgid "Memory used"
+msgstr "内存占用"
+
+msgid "Model"
+msgstr "设备型号"
+
+msgid "NODE OVERVIEW"
+msgstr "节点概览"
+
+msgid "Network settings"
+msgstr "网络设置"
+
+msgid "No WireGuard interface is configured."
+msgstr "尚未配置 WireGuard 接口。"
+
+msgid "Not configured"
+msgstr "未配置"
+
+msgid "Not installed"
+msgstr "尚未安装"
+
+msgid "One node, one lightweight Agent"
+msgstr "一个节点，一个轻量 Agent"
+
+msgid "Password"
+msgstr "密码"
+
+msgid "Physical link status"
+msgstr "物理链路状态"
+
+msgid "Recovery mode"
+msgstr "恢复模式"
+
+msgid "Report heartbeats, link quality, traffic and resources"
+msgstr "上报心跳、链路质量、流量和系统资源"
+
+msgid "SYSTEM MAINTENANCE"
+msgstr "系统维护"
+
+msgid "Secure device enrollment and controller connection"
+msgstr "安全认领设备并连接控制中心"
+
+msgid "Secure node management"
+msgstr "安全节点管理"
+
+msgid "Selected firmware"
+msgstr "所选固件"
+
+msgid "Set an administrator password"
+msgstr "请设置管理员密码"
+
+msgid "Set password"
+msgstr "设置密码"
+
+msgid "Sign in to manage your edge node."
+msgstr "登录后管理您的边缘节点。"
+
+msgid "Since last boot"
+msgstr "本次启动以来"
+
+msgid "Static IPv4"
+msgstr "静态 IPv4"
+
+msgid "Subnet mask"
+msgstr "子网掩码"
+
+msgid "Sync WireGuard peers, routes and network policy"
+msgstr "同步 WireGuard 对端、路由及网络策略"
+
+msgid "System load"
+msgstr "系统负载"
+
+msgid "The Rust Agent will register this node, receive control-plane changes, and configure kernel WireGuard and forwarding. Packet forwarding does not pass through the Agent."
+msgstr "正式版 Agent 将使用 Rust 实现，负责注册节点、接收控制指令并配置内核 WireGuard 和网络转发。实际数据面不会经过 Agent。"
+
+msgid "The firmware cannot be safely installed on this device. Choose the matching MD or MF sysupgrade image."
+msgstr "此固件无法安全安装在当前设备。请选择对应 MD 或 MF 型号的 sysupgrade 镜像。"
+
+msgid "The image passed compatibility checks. Confirm the checksum and start the upgrade. Do not disconnect power during flashing."
+msgstr "镜像兼容性检查已通过。请核对校验值并确认升级。刷写期间切勿断电。"
+
+msgid "The root account has no password. Set one before connecting to an untrusted network."
+msgstr "root 账户尚无密码，请在接入不可信网络前设置。"
+
+msgid "This image cannot preserve existing settings."
+msgstr "此镜像无法保留现有设置。"
+
+msgid "This page is a placeholder. It does not imply that the Agent is installed, connected or running. Kernel WireGuard works independently."
+msgstr "此页面仅为预留入口，不代表 Agent 已安装、连接或运行。内核 WireGuard 可以独立工作。"
+
+msgid "Total traffic"
+msgstr "累计流量"
+
+msgid "Traffic counters are from the br-lan management bridge, not all hardware switch forwarding."
+msgstr "流量来自 br-lan 管理桥接口，不包含交换芯片内部转发的全部数据。"
+
+msgid "UPLINK CONFIGURATION"
+msgstr "上联配置"
+
+msgid "Unavailable"
+msgstr "未获取"
+
+msgid "Updated at %s"
+msgstr "更新于 %s"
+
+msgid "Upgrade AirRelay OS"
+msgstr "升级 AirRelay OS"
+
+msgid "Upload"
+msgstr "上传"
+
+msgid "Uptime"
+msgstr "运行时间"
+
+msgid "Username"
+msgstr "用户名"
+
+msgid "Validating compatibility with this device."
+msgstr "正在校验镜像与设备的兼容性。"
+
+msgid "Welcome back"
+msgstr "欢迎回来"
+
+msgid "Without preserved settings, the management IP may change because AirRelay OS obtains its address via DHCP."
+msgstr "如果不保留现有配置，AirRelay OS 会通过 DHCP 获取管理地址，升级后 IP 可能发生变化。"
+
+msgid "WireGuard"
+msgstr "WireGuard"
+
+msgid "WireGuard tunnels"
+msgstr "WireGuard 隧道"
+
+msgid "br-lan · management"
+msgstr "br-lan · 管理接口"

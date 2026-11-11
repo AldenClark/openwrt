@@ -1,0 +1,106 @@
+{# SPDX-License-Identifier: Apache-2.0 -#}
+{%
+    import { getuid, getspnam } from 'luci.core';
+
+    const boardinfo = ubus.call('system', 'board') ?? {};
+    const page = join('-', length(ctx.request_path) ? ctx.request_path : ctx.path);
+
+    http.prepare_content('text/html; charset=UTF-8');
+-%}
+<!DOCTYPE html>
+<html lang="{{ dispatcher.lang }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="darkreader-lock">
+    <title>{{ striptags(`AirRelay OS${dispatched?.title ? ` · ${_(dispatched.title)}` : ''}`) }}</title>
+    <link rel="stylesheet" href="{{ media }}/cascade.css">
+    <link rel="icon" type="image/svg+xml" href="{{ media }}/logo.svg">
+    {% if (dispatched?.css): %}
+    <link rel="stylesheet" href="{{ resource }}/{{ dispatched.css }}">
+    {% endif %}
+    {% if (css): %}
+    <style>{{ css }}</style>
+    {% endif %}
+    <script src="{{ dispatcher.build_url('admin/translations', dispatcher.lang) }}"></script>
+    <script src="{{ resource }}/cbi.js"></script>
+</head>
+<body class="ar-ui lang_{{ dispatcher.lang }}{{ blank_page ? ' ar-auth' : '' }}" data-page="{{ entityencode(page, true) }}">
+{% if (!blank_page): %}
+    <div class="ar-shell">
+        <header class="ar-appbar">
+          <div class="ar-appbar-inner">
+            <a class="ar-brand" href="{{ dispatcher.build_url('admin/airrelay/overview') }}">
+                <span class="ar-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span class="ar-brand-copy"><strong>AirRelay</strong><small>NODE CONSOLE</small></span>
+            </a>
+            <nav class="ar-nav" aria-label="{{ _('Main navigation') }}">
+                <a class="ar-nav-item ar-nav-status" href="{{ dispatcher.build_url('admin/airrelay/overview') }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h4l3-7 4 12 3-5h4"/></svg>
+                    <span>{{ _('Live status') }}</span>
+                </a>
+                <a class="ar-nav-item ar-nav-network" href="{{ dispatcher.build_url('admin/airrelay/network') }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="6" rx="2"/><path d="M12 9v5M5 19h14M6 14v5m12-5v5"/><circle cx="12" cy="19" r="1"/></svg>
+                    <span>{{ _('Network settings') }}</span>
+                </a>
+                <a class="ar-nav-item ar-nav-upgrade" href="{{ dispatcher.build_url('admin/airrelay/upgrade') }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                    <span>{{ _('Firmware upgrade') }}</span>
+                </a>
+                <a class="ar-nav-item ar-nav-agent" href="{{ dispatcher.build_url('admin/airrelay/agent') }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="13" rx="4"/><path d="M12 3v4m-4 7h.01M16 14h.01M9 18h6"/></svg>
+                    <span>AirRoute Agent</span><span class="ar-nav-soon">SOON</span>
+                </a>
+            </nav>
+            <div class="ar-appbar-actions">
+                <span class="ar-device-name"><span class="ar-led" aria-hidden="true"></span>{{ striptags(boardinfo.hostname ?? 'node') }}</span>
+                <div id="indicators"></div>
+                <label class="ar-lang-label" for="ar-language">{{ _('Language') }}</label>
+                <select id="ar-language" class="ar-language" aria-label="{{ _('Language') }}">
+                    <option value="zh-cn"{{ dispatcher.lang == 'zh-cn' ? ' selected' : '' }}>中文</option>
+                    <option value="en"{{ dispatcher.lang == 'en' ? ' selected' : '' }}>EN</option>
+                </select>
+                <a class="ar-logout" href="{{ dispatcher.build_url('admin/logout') }}">{{ _('Log out') }}</a>
+            </div>
+          </div>
+        </header>
+        <div class="ar-workspace">
+            <main id="maincontent" class="ar-content">
+                {% if (getuid() == 0 && getspnam('root')?.pwdp === ''): %}
+                <div class="alert-message warning ar-security-warning">
+                    <strong>{{ _('Set an administrator password') }}</strong>
+                    <span>{{ _('The root account has no password. Set one before connecting to an untrusted network.') }}</span>
+                    <a href="{{ dispatcher.build_url('admin/system/admin') }}">{{ _('Set password') }}</a>
+                </div>
+                {% endif %}
+                {% if (boardinfo.rootfs_type == 'initramfs'): %}
+                <div class="alert-message warning ar-security-warning">
+                    <strong>{{ _('Recovery mode') }}</strong>
+                    <span>{{ _('Configuration changes will not persist. Install a supported firmware image.') }}</span>
+                    <a href="{{ dispatcher.build_url('admin/airrelay/upgrade') }}">{{ _('Firmware upgrade') }}</a>
+                </div>
+                {% endif %}
+                <noscript><div class="alert-message warning">{{ _('JavaScript is required for this console.') }}</div></noscript>
+                <div id="tabmenu" style="display:none"></div>
+{% endif %}
+{% if (!blank_page): %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('ar-language');
+    if (!input) return;
+    input.addEventListener('change', function() {
+        input.disabled = true;
+        L.require('uci').then(function(uci) {
+            return uci.load('luci').then(function() {
+                uci.set('luci', 'main', 'lang', input.value);
+                return uci.save();
+            }).then(function() { return uci.apply(); });
+        }).then(function() { window.location.reload(); }).catch(function(error) {
+            input.disabled = false;
+            window.alert(error.message || 'Unable to change language');
+        });
+    });
+});
+</script>
+{% endif %}

@@ -1,0 +1,168 @@
+name: AirRelay OS (MD / MF)
+
+# Firmware builds run only when manually dispatched from GitHub Actions.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: "AirRelay ${{ matrix.device }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device: md
+            subtarget: an7581
+            model: md
+          - device: mf
+            subtarget: an7583
+            model: mf
+
+    steps:
+      - name: Check out OpenWrt source
+        uses: actions/checkout@v4
+
+      - name: Install OpenWrt build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential bison ccache clang file flex gawk gettext git \
+            libelf-dev libncurses-dev libssl-dev python3 python3-pyelftools \
+            python3-setuptools rsync subversion swig time unzip wget \
+            xz-utils zlib1g-dev zstd
+          df -h .
+
+      - name: Cache source downloads
+        uses: actions/cache@v4
+        with:
+          path: dl
+          key: airrelay-downloads-${{ hashFiles('airrelay/feeds.conf') }}
+
+      - name: Install only the required feeds
+        run: |
+          cp airrelay/feeds.conf feeds.conf
+          ./scripts/feeds update packages luci
+          ./scripts/feeds install -p luci luci-mod-admin-full luci-proto-wireguard
+
+      - name: Validate AirRelay console sources
+        run: |
+          set -e
+          console=package/airrelay/luci-theme-airrelay
+          # include/scan.mk requires a BuildPackage discovery signature.
+          grep -q 'call BuildPackage' "$console/Makefile"
+          python3 -m json.tool "$console/root/usr/share/luci/menu.d/airrelay-console.json" > /dev/null
+          python3 -m json.tool "$console/root/usr/share/rpcd/acl.d/luci-theme-airrelay.json" > /dev/null
+          sh -n "$console/root/etc/uci-defaults/95_luci-theme-airrelay"
+          for source in "$console"/htdocs/luci-static/resources/view/airrelay/*.js \
+                        "$console"/htdocs/luci-static/resources/airrelay/*.js; do
+            node --check "$source"
+          done
+          node airrelay/scripts/test-console-modules.cjs
+          node airrelay/scripts/test-console-upgrade.cjs
+          msgfmt --check --output-file=/dev/null "$console/po/zh_Hans/airrelay.po"
+          if grep -q '/luci-static/bootstrap' "$console/htdocs/luci-static/airrelay/cascade.css"; then
+            echo 'AirRelay skin must not import Bootstrap CSS' >&2
+            exit 1
+          fi
+
+      - name: Prepare minimal firmware configuration
+        run: bash airrelay/scripts/configure.sh "${{ matrix.device }}"
+
+      - name: Show disk space before build
+        run: df -h .
+
+      - name: Download build inputs
+        run: make download -j2
+
+      - name: Build firmware
+        run: make -j2
+
+      - name: Verify optimized kernel and installed packages
+        shell: bash
+        run: |
+          failed=0
+          bash airrelay/scripts/check-kernel-config.sh "${{ matrix.device }}" || failed=1
+          bash airrelay/scripts/check-image.sh "${{ matrix.device }}" || failed=1
+          exit "$failed"
+
+      - name: Preserve diagnostics if build or verification fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: airrelay-debug-${{ matrix.device }}-${{ github.run_number }}
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
+          path: |
+            build_dir/target-*/linux-airoha_${{ matrix.subtarget }}/linux-*/.config
+            bin/targets/airoha/${{ matrix.subtarget }}/*.manifest
+            bin/targets/airoha/${{ matrix.subtarget }}/*.itb
+
+      - name: Prepare release checksums
+        shell: bash
+        run: |
+          target_dir="bin/targets/airoha/${{ matrix.subtarget }}"
+          cd "$target_dir"
+          shopt -s nullglob
+          images=("airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb" \
+                  "airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb")
+          for artifact in "${images[@]}"; do
+            test -s "$artifact" || { echo "Missing image: $artifact" >&2; exit 1; }
+          done
+          sha256sum "${images[@]}" > "AIRRELAY-${{ matrix.model }}-SHA256SUMS"
+          if [[ -s config.buildinfo ]]; then
+            cp config.buildinfo "airrelay-${{ matrix.model }}.config.buildinfo"
+          fi
+
+      - name: Upload firmware and build manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: airrelay-${{ matrix.device }}-${{ github.run_number }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            bin/targets/airoha/${{ matrix.subtarget }}/airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb
+            bin/targets/airoha/${{ matrix.subtarget }}/airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb
+            bin/targets/airoha/${{ matrix.subtarget }}/*.manifest
+            bin/targets/airoha/${{ matrix.subtarget }}/airrelay-${{ matrix.model }}.config.buildinfo
+            bin/targets/airoha/${{ matrix.subtarget }}/AIRRELAY-${{ matrix.model }}-SHA256SUMS
+
+  release:
+    name: Publish AirRelay prerelease
+    needs: firmware
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download both verified firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: airrelay-*
+          path: release-input
+
+      - name: Create immutable prerelease for this build
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' assets < <(
+            find release-input -type f \( -name '*.itb' -o -name '*.manifest' -o \
+              -name '*.buildinfo' -o -name '*SHA256SUMS' \) -print0
+          )
+          test "${#assets[@]}" -ge 8 || {
+            echo "Both devices must produce images, checksums and manifests." >&2
+            exit 1
+          }
+          tag="airrelay-dev-${{ github.run_id }}-${{ github.run_attempt }}"
+          gh release create "$tag" "${assets[@]}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "AirRelay OS (MD/MF) #${{ github.run_number }}" \
+            --notes "Development images for Nokia XG-040G-MD (AN7581) and XG-040G-MF (AN7583). Kernel WireGuard, no PON, LuCI retained. UBI boot layout ONLY: do not flash stock NAND partitions. Source: $GITHUB_SHA" \
+            --prerelease

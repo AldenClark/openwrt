@@ -1,0 +1,32 @@
+{
+  "admin/airrelay": {
+    "title": "AirRelay",
+    "order": 1,
+    "action": { "type": "firstchild", "preferred": "overview", "recurse": true },
+    "depends": { "acl": [ "luci-theme-airrelay" ] }
+  },
+  "admin/airrelay/overview": {
+    "title": "Live status",
+    "order": 1,
+    "action": { "type": "view", "path": "airrelay/overview" },
+    "depends": { "acl": [ "luci-theme-airrelay" ] }
+  },
+  "admin/airrelay/network": {
+    "title": "Network settings",
+    "order": 2,
+    "action": { "type": "view", "path": "airrelay/network" },
+    "depends": { "acl": [ "luci-mod-network-config" ] }
+  },
+  "admin/airrelay/upgrade": {
+    "title": "Firmware upgrade",
+    "order": 3,
+    "action": { "type": "view", "path": "airrelay/upgrade" },
+    "depends": { "acl": [ "luci-mod-system-flash" ] }
+  },
+  "admin/airrelay/agent": {
+    "title": "AirRoute Agent",
+    "order": 4,
+    "action": { "type": "view", "path": "airrelay/agent" },
+    "depends": { "acl": [ "luci-theme-airrelay" ] }
+  }
+}

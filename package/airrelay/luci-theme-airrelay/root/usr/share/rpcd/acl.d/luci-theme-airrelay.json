@@ -1,0 +1,16 @@
+{
+  "luci-theme-airrelay": {
+    "description": "Read-only AirRelay node status and console navigation",
+    "read": {
+      "ubus": {
+        "system": [ "board", "info" ],
+        "network.interface": [ "dump" ],
+        "network.device": [ "status" ]
+      },
+      "uci": [ "network", "luci" ]
+    },
+    "write": {
+      "uci": [ "luci" ]
+    }
+  }
+}
