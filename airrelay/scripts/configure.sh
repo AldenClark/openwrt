@@ -57,10 +57,12 @@ for feature in \
     CONFIG_BUSYBOX_CONFIG_CROND \
     CONFIG_BUSYBOX_CONFIG_CRONTAB \
     CONFIG_BUSYBOX_CONFIG_FEATURE_NTPD_SERVER; do
-    grep -qx "# ${feature} is not set" .config || {
+    # An optional package absent from package metadata has no Kconfig entry.
+    # Treat both 'not set' and 'undefined' as disabled, but reject actual y.
+    if grep -qx "${feature}=y" .config; then
         echo "Unwanted configuration was enabled: ${feature}" >&2
         exit 1
-    }
+    fi
 done
 
 grep -qx 'CONFIG_VERSION_DIST="AirRelay OS"' .config || {
