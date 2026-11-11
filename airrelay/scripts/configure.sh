@@ -38,6 +38,7 @@ for feature in \
     CONFIG_PACKAGE_luci-proto-wireguard \
     CONFIG_LUCI_LANG_zh_Hans \
     CONFIG_PACKAGE_luci-i18n-airrelay-zh-cn \
+    CONFIG_IMAGEOPT \
     CONFIG_VERSIONOPT \
     CONFIG_BUSYBOX_CUSTOM \
     CONFIG_BUSYBOX_CONFIG_UDHCPC \
