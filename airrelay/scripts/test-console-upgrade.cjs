@@ -8,14 +8,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const source = fs.readFileSync(path.resolve(__dirname,
-  '../../package/airrelay/luci-theme-airrelay/htdocs/luci-static/resources/view/airrelay/upgrade.js'), 'utf8');
+  '../../package/airrelay/luci-theme-airrelay/htdocs/luci-static/resources/airrelay/system.js'), 'utf8');
 const firmwarePath = '/tmp/firmware.bin';
 
 function verifyPackagedUpgradeContract() {
   const repo = path.resolve(__dirname, '../..');
   const menu = JSON.parse(fs.readFileSync(path.join(repo,
     'package/airrelay/luci-theme-airrelay/root/usr/share/luci/menu.d/airrelay-console.json'), 'utf8'));
-  assert.ok(menu['admin/airrelay/upgrade'].depends.acl.includes('luci-mod-system-flash'));
+  assert.ok(menu['admin/airrelay/settings'].depends.acl.includes('luci-mod-system-flash'));
 
   for (const [subtarget, model] of [ ['an7581', 'md'], ['an7583', 'mf'] ]) {
     const config = fs.readFileSync(path.join(repo, `airrelay/configs/${model}.config`), 'utf8');
@@ -39,6 +39,7 @@ function verifyPackagedUpgradeContract() {
       '/sbin/sysupgrade /tmp/firmware.bin',
       '/sbin/sysupgrade -n /tmp/firmware.bin'
     ]) assert.ok(acl.write.file[command]?.includes('exec'), `Missing ACL: ${command}`);
+    assert.ok(acl.write.file['/sbin/firstboot -r -y']?.includes('exec'));
     assert.ok(acl.write.file['/tmp/firmware.bin']?.includes('write'));
     assert.ok(acl.write.ubus['cgi-io']?.includes('upload') || acl.write['cgi-io']?.includes('upload'));
     assert.ok(acl.write.ubus.system?.includes('validate_firmware_image'));
@@ -54,8 +55,8 @@ function element(tag, attributes, children) {
   const node = {
     tag, attributes: attributes || {},
     children: [ children ].flat(Infinity).filter(c => c != null && c !== ''),
-    disabled: !!attributes?.disabled,
-    checked: !!attributes?.checked
+    disabled: attributes?.disabled != null,
+    checked: attributes?.checked != null
   };
   if (typeof node.attributes.click === 'function')
     node.click = () => node.attributes.click({ currentTarget: node, target: node });
@@ -93,6 +94,10 @@ function makeHarness(options = {}) {
   const file = {
     exec(program, args) {
       calls.push([ 'exec', program, ...args ]);
+      if (program === '/sbin/firstboot') {
+        if (options.resetError) return Promise.reject(options.resetError);
+        return Promise.resolve(options.resetResult ?? { code: 0, stderr: '' });
+      }
       if (args[0] === '--test')
         return Promise.resolve(options.testResult ?? { code: 0, stderr: '' });
       return Promise.resolve(options.installResult ?? { code: 0, stderr: '' });
@@ -131,7 +136,7 @@ function makeHarness(options = {}) {
     }
   };
   const view = { extend(definition) { return definition; } };
-  const page = new Function('view', 'rpc', 'fs', 'ui', 'L', 'E', '_', 'window', source)(
+  const page = new Function('baseclass', 'rpc', 'fs', 'ui', 'L', 'E', '_', 'window', source)(
     view, rpc, file, ui, { hasViewPermission: () => options.canWrite ?? false },
     element, value => value, { location: { host: '192.168.1.3' } }
   );
@@ -170,6 +175,7 @@ async function test() {
     await button(ctx.page.render(), 'Choose firmware…').click();
     const keep = findNode(ctx.lastModal().children, n => n.tag === 'input' && n.attributes.type === 'checkbox');
     assert.ok(keep && keep.checked);
+    assert.equal(keep.disabled, false);
     keep.checked = false;
     await button(ctx.lastModal().children, 'Install firmware').click();
     assert.ok(ctx.calls.some(c => c.join('|') === `exec|/sbin/sysupgrade|-n|${firmwarePath}`));
@@ -220,6 +226,29 @@ async function test() {
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(ctx.lastModal().title, 'Firmware upgrade command failed.');
     assert.equal(ctx.calls.some(c => c.includes('--force') || c.includes('-F')), false);
+  }
+
+  // Factory reset requires an explicit confirmation; cancel never executes it.
+  {
+    const ctx = makeHarness({ canWrite: true });
+    await button(ctx.page.render(), 'Reset system…').click();
+    assert.equal(ctx.lastModal().title, 'Reset system?');
+    assert.equal(ctx.calls.some(c => c[1] === '/sbin/firstboot'), false);
+    await button(ctx.lastModal().children, 'Cancel').click();
+    assert.equal(ctx.calls.some(c => c[1] === '/sbin/firstboot'), false);
+    await button(ctx.page.render(), 'Reset system…').click();
+    await button(ctx.lastModal().children, 'Reset system').click();
+    assert.ok(ctx.calls.some(c => c.join('|') === 'exec|/sbin/firstboot|-r|-y'));
+    assert.deepEqual(ctx.reconnects, [[ '192.168.1.3' ]]);
+  }
+  for (const conditions of [
+    { resetResult: { code: 1, stderr: 'reset rejected' } },
+    { resetError: new Error('Access denied') }
+  ]) {
+    const ctx = makeHarness({ canWrite: true, ...conditions });
+    await ctx.page.confirmFactoryReset();
+    assert.equal(ctx.lastModal().title, 'System reset failed.');
+    assert.equal(ctx.reconnects.length, 0);
   }
 
   console.log('AirRelay firmware upgrade: picker, upload, validation, cancel, and flash RPC flow OK');

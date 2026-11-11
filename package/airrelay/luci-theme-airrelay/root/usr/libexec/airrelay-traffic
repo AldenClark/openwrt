@@ -1,0 +1,24 @@
+#!/bin/sh
+# 241 counters produce 240 rate samples: one hour at 15-second resolution.
+# Keep private temporary files off flash; readers only see an atomic snapshot.
+umask 077
+store=/tmp/airrelay-traffic
+mkdir -p "$store" || exit 1
+trap 'rm -f "$store/history.new"; exit 0' TERM INT
+while :; do
+    read -r uptime rest < /proc/uptime
+    uptime=${uptime%%.*}
+    rx= tx=
+    read -r rx < /sys/class/net/br-lan/statistics/rx_bytes 2>/dev/null
+    read -r tx < /sys/class/net/br-lan/statistics/tx_bytes 2>/dev/null
+    case "$uptime:$rx:$tx" in
+        *[!0-9:]*|:*|*::*|*:) ;;
+        *)
+            { tail -n 240 "$store/history" 2>/dev/null
+              printf '%s %s %s\n' "$uptime" "$rx" "$tx"
+            } > "$store/history.new" && mv -f "$store/history.new" "$store/history"
+            ;;
+    esac
+    sleep 15 &
+    wait $!
+done

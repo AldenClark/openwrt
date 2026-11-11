@@ -1,18 +1,18 @@
 'use strict';
-'require view';
+'require baseclass';
 'require rpc';
 'require fs';
 'require ui';
 
 // Follow LuCI's vetted firmware upload and system.validate_firmware_image
-// / sysupgrade --test path. No raw MTD writes, reset, backups, or --force.
+// / sysupgrade --test path. Reset uses the native firstboot command.
 const validateImage = rpc.declare({
   object: 'system', method: 'validate_firmware_image', params: [ 'path' ],
   expect: { '': { valid: false, allow_backup: false } }
 });
 const firmwarePath = '/tmp/firmware.bin';
 
-return view.extend({
+return baseclass.extend({
   handleUpload() {
     // Do not gate the file picker on a best-effort filesystem stat or the
     // frontend view permission hint. The upload RPC enforces authorization,
@@ -36,7 +36,7 @@ return view.extend({
         }
 
         const canKeep = Boolean(validation.allow_backup);
-        const keep = E('input', { type: 'checkbox', checked: canKeep, disabled: !canKeep });
+        const keep = E('input', { type: 'checkbox', checked: canKeep ? '' : null, disabled: canKeep ? null : '' });
         const confirm = [
           E('p', {}, _('The image passed compatibility checks. Confirm the checksum and start the upgrade. Do not disconnect power during flashing.')),
           E('div', { class: 'ar-upgrade-file' }, [
@@ -99,28 +99,65 @@ return view.extend({
     ui.awaitReconnect(window.location.host);
   },
 
-  render() {
-    return E('div', { class: 'ar-upgrade-page' }, [
-      E('div', { class: 'ar-page-heading' }, [
-        E('div', {}, [
-          E('div', { class: 'ar-eyebrow' }, _('SYSTEM MAINTENANCE')),
-          E('h2', {}, _('Firmware upgrade')),
-          E('p', {}, _('Install a verified AirRelay OS firmware image.'))
-        ])
-      ]),
-      E('section', { class: 'ar-panel ar-upgrade-panel' }, [
-        E('span', { class: 'ar-upgrade-symbol', 'aria-hidden': 'true' }, '↑'),
-        E('h3', {}, _('Upgrade AirRelay OS')),
-        E('p', { class: 'ar-muted' }, _('Choose the sysupgrade image for this exact device model (XG-040G-MD or XG-040G-MF). The file is checked before installation.')),
+  handleFactoryReset() {
+    ui.showModal(_('Reset system?'), [
+      E('p', {}, _('All settings will be erased and the device will restart. Its management address will be obtained via DHCP.')),
+      E('div', { class: 'ar-modal-actions' }, [
+        E('button', { class: 'btn', click: ui.hideModal }, _('Cancel')),
         E('button', {
-          class: 'btn cbi-button-action important ar-upgrade-button',
-          click: ui.createHandlerFn(this, 'handleUpload')
-        }, _('Choose firmware…'))
+          class: 'btn cbi-button-negative',
+          click: ui.createHandlerFn(this, 'confirmFactoryReset')
+        }, _('Reset system'))
       ])
     ]);
   },
 
-  handleSaveApply: null,
-  handleSave: null,
-  handleReset: null
+  async confirmFactoryReset() {
+    ui.showModal(_('Resetting system…'), [
+      E('p', { class: 'spinning' }, _('Erasing settings and restarting. Find the new address in your router’s DHCP leases.'))
+    ]);
+    const failed = message => ui.showModal(_('System reset failed.'), [
+      E('p', { class: 'alert-message danger' }, message),
+      E('div', { class: 'ar-modal-actions' }, E('button', { class: 'btn', click: ui.hideModal }, _('Close')))
+    ]);
+    try {
+      const result = await fs.exec('/sbin/firstboot', [ '-r', '-y' ]);
+      if (result.code !== 0) {
+        failed(result.stderr || _('System reset failed.'));
+        return;
+      }
+    }
+    catch (err) {
+      // Reboot can terminate the request. A definite RPC rejection is a
+      // failure; a lost transport leaves the restart dialog and reconnects.
+      if (err.name === 'RPCError' || /access denied|permission denied/i.test(err.message || '')) {
+        failed(err.message);
+        return;
+      }
+    }
+    ui.awaitReconnect(window.location.host);
+  },
+
+  render() {
+    return E('section', { class: 'ar-system-section' }, [
+      E('h2', {}, _('System management')),
+      E('div', { class: 'ar-panel ar-system-actions' }, [
+        E('div', { class: 'ar-system-action' }, [
+          E('strong', {}, _('Firmware upgrade')),
+          E('button', {
+            class: 'btn cbi-button-action important',
+            click: ui.createHandlerFn(this, 'handleUpload')
+          }, _('Choose firmware…'))
+        ]),
+        E('div', { class: 'ar-system-action' }, [
+          E('strong', {}, _('Reset system')),
+          E('button', {
+            class: 'btn cbi-button-negative',
+            disabled: L.hasViewPermission() ? null : true,
+            click: ui.createHandlerFn(this, 'handleFactoryReset')
+          }, _('Reset system…'))
+        ])
+      ])
+    ]);
+  }
 });

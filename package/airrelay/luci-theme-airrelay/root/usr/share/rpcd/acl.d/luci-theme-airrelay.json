@@ -3,14 +3,59 @@
     "description": "Read-only AirRelay node status and console navigation",
     "read": {
       "ubus": {
-        "system": [ "board", "info" ],
-        "network.interface": [ "dump" ],
-        "network.device": [ "status" ]
+        "system": [
+          "board",
+          "info"
+        ],
+        "network.interface": [
+          "dump"
+        ],
+        "network.device": [
+          "status"
+        ],
+        "file": [
+          "read"
+        ],
+        "rc": [
+          "list"
+        ]
       },
-      "uci": [ "network", "luci" ]
+      "uci": [
+        "network",
+        "luci"
+      ],
+      "file": {
+        "/tmp/airrelay-traffic/history": [
+          "read"
+        ]
+      }
     },
     "write": {
-      "uci": [ "luci" ]
+      "uci": [
+        "luci"
+      ]
+    }
+  },
+  "luci-airrelay-wireguard-restart": {
+    "description": "Restart configured WireGuard tunnels",
+    "read": {
+      "ubus": {
+        "network.interface": [
+          "dump"
+        ]
+      }
+    },
+    "write": {
+      "ubus": {
+        "file": [
+          "exec"
+        ]
+      },
+      "file": {
+        "/usr/libexec/airrelay-wg-restart *": [
+          "exec"
+        ]
+      }
     }
   }
 }

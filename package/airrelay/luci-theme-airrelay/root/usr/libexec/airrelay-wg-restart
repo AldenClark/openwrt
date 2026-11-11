@@ -1,0 +1,17 @@
+#!/bin/sh
+# Restart precisely one configured WireGuard interface, without network reload.
+[ "$#" -eq 1 ] || { echo 'Exactly one tunnel name is required.' >&2; exit 2; }
+name=$1
+case "$name" in
+    ''|*[!a-zA-Z0-9_-]*) echo 'Invalid interface name.' >&2; exit 2 ;;
+esac
+[ "$(uci -q get "network.$name.proto")" = wireguard ] || {
+    echo 'Not a configured WireGuard tunnel.' >&2
+    exit 2
+}
+[ "$(uci -q get "network.$name.disabled")" != 1 ] || {
+    echo 'WireGuard tunnel is disabled.' >&2
+    exit 3
+}
+ubus call "network.interface.$name" down >/dev/null || exit 1
+ubus call "network.interface.$name" up >/dev/null || exit 1

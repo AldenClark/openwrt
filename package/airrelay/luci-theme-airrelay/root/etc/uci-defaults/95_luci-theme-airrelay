@@ -24,4 +24,5 @@ case "$old_hostname" in
         uci -q commit system
         ;;
 esac
+/etc/init.d/airrelay-traffic enable
 exit 0

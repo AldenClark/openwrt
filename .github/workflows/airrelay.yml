@@ -62,8 +62,14 @@ jobs:
                         "$console"/htdocs/luci-static/resources/airrelay/*.js; do
             node --check "$source"
           done
+          sh -n "$console/root/etc/init.d/airrelay-traffic"
+          sh -n "$console/root/usr/libexec/airrelay-traffic"
+          sh -n "$console/root/usr/libexec/airrelay-wg-restart"
+          node airrelay/scripts/test-console-history.cjs
           node airrelay/scripts/test-console-modules.cjs
           node airrelay/scripts/test-console-upgrade.cjs
+          node airrelay/scripts/test-console-wireguard.cjs
+          node airrelay/scripts/test-console-restart.cjs
           msgfmt --check --output-file=/dev/null "$console/po/zh_Hans/airrelay.po"
           if grep -q '/luci-static/bootstrap' "$console/htdocs/luci-static/airrelay/cascade.css"; then
             echo 'AirRelay skin must not import Bootstrap CSS' >&2

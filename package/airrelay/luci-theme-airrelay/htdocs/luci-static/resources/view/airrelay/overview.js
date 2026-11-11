@@ -2,6 +2,8 @@
 'require view';
 'require rpc';
 'require poll';
+'require fs';
+'require airrelay.wireguard as wireguard';
 'require airrelay.traffic as traffic';
 
 const callBoard = rpc.declare({ object: 'system', method: 'board', expect: { '': {} } });
@@ -19,8 +21,10 @@ function snapshot() {
     safe(callInfo(), {}),
     safe(callInterfaces(), []),
     safe(callPort('br-lan'), {}),
+    safe(fs.read('/tmp/airrelay-traffic/history'), ''),
     ...ports.map(name => safe(callPort(name), {}))
-  ]);
+  ]).then(async ([info, interfaces, bridge, history, ...states]) =>
+    [info, interfaces, bridge, history, await wireguard.snapshot(interfaces), ...states]);
 }
 
 function humanUptime(value) {
@@ -32,11 +36,6 @@ function humanUptime(value) {
   const minutes = Math.floor(value % 3600 / 60);
 
   return days ? _('%d d %d h').format(days, hours) : _('%d h %d m').format(hours, minutes);
-}
-
-function linePath(values) {
-  const max = Math.max(1, ...values);
-  return values.map((v, i) => `${i ? 'L' : 'M'}${(i / Math.max(1, values.length - 1) * 320).toFixed(1)},${(75 - v / max * 62).toFixed(1)}`).join(' ');
 }
 
 function trafficCard(label, key) {
@@ -54,15 +53,15 @@ function trafficCard(label, key) {
     E('h3', {}, label),
     E('div', { class: 'ar-traffic-value', 'data-ar': `${key}-rate` }, '—'),
     E('div', { class: 'ar-traffic-total' }, [ _('Total traffic'), ': ', E('strong', { 'data-ar': `${key}-total` }, '—') ]),
-    svg
+    svg,
+    E('div', { class: 'ar-chart-range' }, [ E('span', {}, _('1 hour ago')), E('span', {}, _('Now')) ])
   ]);
 }
 
-function metric(label, key, detail) {
+function metric(label, key) {
   return E('div', { class: 'ar-card' }, [
     E('div', { class: 'ar-card-label' }, label),
-    E('div', { class: 'ar-card-value', 'data-ar': key }, '—'),
-    E('div', { class: 'ar-card-detail' }, detail)
+    E('div', { class: 'ar-card-value', 'data-ar': key }, '—')
   ]);
 }
 
@@ -82,27 +81,23 @@ return view.extend({
     const page = E('div', { class: 'ar-dashboard' }, [
       E('div', { class: 'ar-page-heading' }, [
         E('div', {}, [
-          E('div', { class: 'ar-eyebrow' }, _('NODE OVERVIEW')),
-          E('h2', {}, _('Live status')),
-          E('p', {}, _('Local readings refreshed every 5 seconds. No background monitoring service.'))
+          E('h2', {}, _('Live status'))
         ]),
         E('div', { class: 'ar-freshness', 'data-ar': 'fresh' }, _('Loading status…'))
       ]),
       E('div', { class: 'ar-grid' }, [
-        metric(_('Uptime'), 'uptime', _('Since last boot')),
-        metric(_('System load'), 'load', _('1-minute average')),
-        metric(_('Memory used'), 'memory', _('Calculated using available memory')),
-        metric(_('WireGuard'), 'wireguard', _('Interface up, not peer handshake'))
+        metric(_('Uptime'), 'uptime'),
+        metric(_('System load'), 'load'),
+        metric(_('Memory used'), 'memory')
       ]),
+      wireguard.render(),
       E('div', { class: 'ar-traffic-grid' }, [
         trafficCard(_('Download'), 'rx'),
         trafficCard(_('Upload'), 'tx')
       ]),
-      E('p', { class: 'ar-traffic-footnote' }, _('Traffic counters are from the br-lan management bridge, not all hardware switch forwarding.')),
       E('div', { class: 'ar-panel-grid' }, [
         E('section', { class: 'ar-panel' }, [
           E('h3', {}, _('Ethernet ports')),
-          E('p', { class: 'ar-panel-subtitle' }, _('Physical link status')),
           E('div', { class: 'ar-port-grid' }, ports.map(name =>
             E('div', { class: 'ar-port', 'data-ar-port': name }, [
               E('span', { class: 'ar-port-dot' }),
@@ -111,12 +106,11 @@ return view.extend({
             ])
           )),
           E('div', { class: 'ar-actions' }, [
-            E('a', { class: 'ar-button', href: L.url('admin/airrelay/network') }, _('Network settings'))
+            E('a', { class: 'ar-button', href: L.url('admin/airrelay/settings') }, _('Settings'))
           ])
         ]),
         E('section', { class: 'ar-panel' }, [
           E('h3', {}, _('Device information')),
-          E('p', { class: 'ar-panel-subtitle' }, _('Management interface and firmware')),
           infoLine(_('Model'), 'model'),
           infoLine(_('Kernel'), 'kernel'),
           infoLine(_('Management IPv4'), 'ipaddr'),
@@ -128,7 +122,6 @@ return view.extend({
 
     this._board = board || {};
     this._trafficSample = traffic.tracker();
-    this._trafficHistory = { rx: [], tx: [] };
     this.updateSnapshot(page, data);
     poll.add(() => snapshot().then(data => this.updateSnapshot(page, data)), 5);
 
@@ -139,10 +132,9 @@ return view.extend({
     if (!page.isConnected && this._initialized)
       return;
 
-    const [info, interfaces, bridge, ...portStates] = data;
+    const [info, interfaces, bridge, historyText, tunnels, ...portStates] = data;
     const all = Array.isArray(interfaces) ? interfaces : [];
     const lan = all.find(i => i.interface === 'lan') || {};
-    const wg = all.filter(i => i.proto === 'wireguard');
     const memory = info?.memory || {};
     const board = this._board || {};
     const release = board.release || {};
@@ -161,13 +153,6 @@ return view.extend({
     set('uptime', humanUptime(info?.uptime));
     set('load', oneMinuteLoad);
     set('memory', percent !== null ? `${Math.max(0, Math.min(100, percent))}%` : '—');
-    const wgStatus = wg.length === 0 ? _('Not configured') : _('%d / %d up').format(wg.filter(i => i.up).length, wg.length);
-    const wgEl = set('wireguard', wgStatus);
-    if (wgEl) {
-      wgEl.classList.toggle('ar-value-up', wg.some(i => i.up));
-      wgEl.classList.toggle('ar-value-down', wg.length > 0 && !wg.some(i => i.up));
-    }
-
     set('model', board.model || '—');
     set('kernel', board.kernel || '—');
     set('ipaddr', firstV4?.address || _('Unavailable'));
@@ -176,18 +161,17 @@ return view.extend({
     set('fresh', _('Updated at %s').format(new Date().toLocaleTimeString()));
 
     const trafficNow = this._trafficSample('br-lan', bridge);
+    const history = traffic.history(historyText, info?.uptime);
+    const latest = history[history.length - 1];
     for (const side of ['rx', 'tx']) {
-      const rate = trafficNow?.[`${side}Rate`];
+      const rate = trafficNow?.[`${side}Rate`] ??
+        (latest && info.uptime - latest.time <= 30 ? latest[`${side}Rate`] : null);
       set(`${side}-rate`, rate == null ? '—' : `${traffic.bytes(rate)}/s`);
       set(`${side}-total`, trafficNow ? traffic.bytes(trafficNow[side]) : '—');
-      if (rate != null) {
-        const history = this._trafficHistory[side];
-        history.push(rate);
-        if (history.length > 40) history.shift();
-        const path = page.querySelector(`[data-ar-graph="${side}"]`);
-        if (path) path.setAttribute('d', linePath(history));
-      }
+      const path = page.querySelector(`[data-ar-graph="${side}"]`);
+      if (path) path.setAttribute('d', traffic.linePath(history, side, info?.uptime));
     }
+    wireguard.update(page, tunnels);
 
     ports.forEach((name, index) => {
       const state = portStates[index] || {};

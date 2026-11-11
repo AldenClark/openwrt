@@ -2,6 +2,8 @@
 {%
     import { getuid, getspnam } from 'luci.core';
 
+    const agentService = ubus.call('rc', 'list', { name: 'airroute-agent' })?.['airroute-agent'];
+    const agentEnabled = agentService?.enabled === true;
     const boardinfo = ubus.call('system', 'board') ?? {};
     const page = join('-', length(ctx.request_path) ? ctx.request_path : ctx.path);
 
@@ -15,7 +17,7 @@
     <meta name="color-scheme" content="light">
     <meta name="darkreader-lock">
     <title>{{ striptags(`AirRelay OS${dispatched?.title ? ` · ${_(dispatched.title)}` : ''}`) }}</title>
-    <link rel="stylesheet" href="{{ media }}/cascade.css">
+    <link rel="stylesheet" href="{{ media }}/cascade.css?v={{ version.distrevision }}-10">
     <link rel="icon" type="image/svg+xml" href="{{ media }}/logo.svg">
     {% if (dispatched?.css): %}
     <link rel="stylesheet" href="{{ resource }}/{{ dispatched.css }}">
@@ -40,21 +42,18 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h4l3-7 4 12 3-5h4"/></svg>
                     <span>{{ _('Live status') }}</span>
                 </a>
-                <a class="ar-nav-item ar-nav-network" href="{{ dispatcher.build_url('admin/airrelay/network') }}">
+                <a class="ar-nav-item ar-nav-settings" href="{{ dispatcher.build_url('admin/airrelay/settings') }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="6" rx="2"/><path d="M12 9v5M5 19h14M6 14v5m12-5v5"/><circle cx="12" cy="19" r="1"/></svg>
-                    <span>{{ _('Network settings') }}</span>
+                    <span>{{ _('Settings') }}</span>
                 </a>
-                <a class="ar-nav-item ar-nav-upgrade" href="{{ dispatcher.build_url('admin/airrelay/upgrade') }}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-                    <span>{{ _('Firmware upgrade') }}</span>
-                </a>
+                {% if (agentEnabled): %}
                 <a class="ar-nav-item ar-nav-agent" href="{{ dispatcher.build_url('admin/airrelay/agent') }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="13" rx="4"/><path d="M12 3v4m-4 7h.01M16 14h.01M9 18h6"/></svg>
-                    <span>AirRoute Agent</span><span class="ar-nav-soon">SOON</span>
+                    <span>AirRoute Agent</span>
                 </a>
+                {% endif %}
             </nav>
             <div class="ar-appbar-actions">
-                <span class="ar-device-name"><span class="ar-led" aria-hidden="true"></span>{{ striptags(boardinfo.hostname ?? 'node') }}</span>
                 <div id="indicators"></div>
                 <label class="ar-lang-label" for="ar-language">{{ _('Language') }}</label>
                 <select id="ar-language" class="ar-language" aria-label="{{ _('Language') }}">
@@ -78,7 +77,7 @@
                 <div class="alert-message warning ar-security-warning">
                     <strong>{{ _('Recovery mode') }}</strong>
                     <span>{{ _('Configuration changes will not persist. Install a supported firmware image.') }}</span>
-                    <a href="{{ dispatcher.build_url('admin/airrelay/upgrade') }}">{{ _('Firmware upgrade') }}</a>
+                    <a href="{{ dispatcher.build_url('admin/airrelay/settings') }}">{{ _('Firmware upgrade') }}</a>
                 </div>
                 {% endif %}
                 <noscript><div class="alert-message warning">{{ _('JavaScript is required for this console.') }}</div></noscript>

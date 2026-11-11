@@ -58,23 +58,40 @@ The two supported devices are:
 ## AirRelay Console (default web UI)
 
 Both UBI images bundle `luci-theme-airrelay` as the default LuCI theme, with
-just four top-level navigation items:
+up to three top-level navigation items:
 
 1. **Realtime status:** uptime, load, memory, management IPv4, port carriers,
-   WireGuard *interface-up* count, and management bridge traffic rates/totals.
-   Counters update every five seconds through existing `ubus` services; no new
-   daemon runs. Bridge counters do not cover all hardware-switched traffic.
-   WireGuard "up" is deliberately **not** reported as a successful handshake.
-2. **Network:** a deliberately constrained LuCI UCI form for the management
-   `br-lan` DHCP client or static IPv4; Save & Apply retains LuCI's network
-   rollback workflow. A read-only WireGuard list shows interface state, tunnel
-   IPv4 addresses, receive/send totals and sampled rates. It does not expose
-   an advanced interface editor.
-3. **Firmware upgrade:** a dedicated one-purpose page using LuCI's existing
-   authenticated upload, `validate_firmware_image` and `sysupgrade --test`
-   procedures. No factory reset, MTD writes, forced upgrades, or backups UI.
-4. **AirRoute Agent:** clearly labeled placeholder for future enrollment,
-   WireGuard peer configuration and health monitoring; no Agent is bundled.
+   WireGuard interface state and tunnel IPv4 / counters / sampled rates.
+   Live readings refresh every five seconds through existing `ubus` services.
+   A small procd service (`airrelay-traffic`) samples `br-lan` byte counters
+   every 15 seconds even with no browser open. It atomically retains 241
+   counter snapshots in `/tmp/airrelay-traffic/history`, giving up to one hour
+   of rates. Data stays in RAM, is cleared on reboot, and never writes flash.
+   Charts use a fixed one-hour time axis and break on counter resets or gaps.
+   Bridge counters do not cover all hardware-switched traffic; interface-up
+   remains distinct from a successful WireGuard handshake. Each tunnel has a
+   permission-checked restart action. The helper validates its UCI protocol
+   and enabled state, then calls only that netifd interface down/up; it never
+   reloads the whole network or changes persistent configuration.
+2. **Settings:** management `br-lan` DHCP client or static IPv4 configuration
+   with LuCI's Save & Apply / rollback workflow, followed by system management.
+   Firmware upgrade retains authenticated upload, `validate_firmware_image`
+   and `sysupgrade --test`, with no forced flashing. Factory reset requires
+   confirmation before LuCI's native `/sbin/firstboot -r -y` operation. After
+   reset the device uses DHCP; find its new address in the upstream lease table.
+   The manual WireGuard editor preserves existing interface names and peers,
+   supports creating a first tunnel, and uses native UCI confirmed apply.
+   It fills missing tunnel-zone membership, outbound forwarding/NAT, and
+   explicit UDP listener rules; existing firewall assignments remain intact.
+   The editor refuses default-route takeover and rechecks Agent ownership
+   before saving. Peer routes are enabled and keepalive is fixed at 25 seconds
+   when the manual configuration is saved. Private / preshared keys stay
+   concealed, and the last remaining peer cannot be removed. Agent detection uses the OpenWrt rc service `airroute-agent`:
+   an installed and enabled service shows the Agent navigation item; enabled
+   or still-running services suppress manual editing. Detection failure hides
+   the editor. A future Agent package must install that init service name.
+   Old `/network` and `/upgrade` URLs alias this page.
+3. **AirRoute Agent:** installation state only; no Agent is bundled.
 
 The standard `luci-mod-admin-full` back-end views remain installed for
 development and recovery, but they are **not shown in the AirRelay navigation**.
