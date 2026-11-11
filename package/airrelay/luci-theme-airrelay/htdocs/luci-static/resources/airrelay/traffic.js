@@ -1,4 +1,5 @@
 'use strict';
+'require baseclass';
 
 // Sample kernel byte counters in the active page. No extra daemon.
 function bytes(value) {
@@ -27,4 +28,6 @@ function tracker() {
   };
 }
 
-return { bytes, tracker };
+// LuCI's loader needs a baseclass subclass constructor, not a plain object.
+// The loader creates the shared module instance itself.
+return baseclass.extend({ bytes, tracker });
