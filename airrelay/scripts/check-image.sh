@@ -11,10 +11,10 @@ esac
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 target_dir="$repo_root/bin/targets/airoha/$subtarget"
-manifest="$target_dir/openwrt-airoha-$subtarget.manifest"
+manifest="$target_dir/airrelay-os-airoha-$subtarget.manifest"
 if [[ ! -f "$manifest" ]]; then
     shopt -s nullglob
-    manifests=("$target_dir"/openwrt-airoha-"$subtarget"*.manifest)
+    manifests=("$target_dir"/airrelay-os-airoha-"$subtarget"*.manifest)
     [[ ${#manifests[@]} -eq 1 ]] || {
         echo "Expected exactly one AirRelay manifest under $target_dir" >&2
         exit 1
@@ -28,7 +28,7 @@ has_package() {
 
 for name in kmod-wireguard wireguard-tools firewall4 luci-mod-admin-full \
             luci-proto-wireguard luci-lib-uqr resolveip \
-            luci-theme-bootstrap luci-theme-airrelay \
+            luci-theme-airrelay luci-i18n-airrelay-zh-cn \
             uhttpd uhttpd-mod-ubus px5g-mbedtls dropbear; do
     if ! has_package "$name"; then
         echo "Required package missing: $name" >&2
@@ -36,7 +36,8 @@ for name in kmod-wireguard wireguard-tools firewall4 luci-mod-admin-full \
     fi
 done
 
-for name in dnsmasq dnsmasq-full odhcpd-ipv6only ppp ppp-mod-pppoe \
+for name in luci-theme-bootstrap luci-theme-bootstrap-dark luci-theme-bootstrap-light \
+            dnsmasq dnsmasq-full odhcpd-ipv6only ppp ppp-mod-pppoe \
             odhcp6c kmod-tun kmod-nft-tproxy strongswan kmod-usb3; do
     if has_package "$name"; then
         echo "Unexpected package included: $name" >&2

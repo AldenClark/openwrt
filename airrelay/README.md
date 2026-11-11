@@ -25,7 +25,7 @@ The two supported devices are:
 
 - **Included:** SoC Ethernet / DSA / PHY, NAND/UBI, procd, UCI/ubus, netifd,
   Dropbear, firewall4/nftables IPv4 NAT, kernel WireGuard (`kmod-wireguard`),
-  `wireguard-tools`, and a small LuCI HTTPS UI with the **AirRelay Console**
+  `wireguard-tools`, and a small bilingual LuCI HTTPS UI with the **AirRelay Console**
   theme, `luci-proto-wireguard`, `uhttpd`, `uhttpd-mod-ubus`, and `px5g-mbedtls`.
 - **Excluded:** DHCP server, PPPoE, Wi-Fi, PON userspace, VoIP, strongSwan,
   AirRoute Core, userspace WireGuard, TUN and TPROXY modules.
@@ -60,29 +60,35 @@ The two supported devices are:
 Both UBI images bundle `luci-theme-airrelay` as the default LuCI theme, with
 just four top-level navigation items:
 
-1. **Realtime status:** system uptime, load, memory, uplink IPv4, four copper
-   port carriers, and *interface-up* state for kernel WireGuard. Status updates
-   every five seconds through existing `ubus` services; no new daemon runs.
+1. **Realtime status:** uptime, load, memory, management IPv4, port carriers,
+   WireGuard *interface-up* count, and management bridge traffic rates/totals.
+   Counters update every five seconds through existing `ubus` services; no new
+   daemon runs. Bridge counters do not cover all hardware-switched traffic.
    WireGuard "up" is deliberately **not** reported as a successful handshake.
 2. **Network:** a deliberately constrained LuCI UCI form for the management
    `br-lan` DHCP client or static IPv4; Save & Apply retains LuCI's network
-   rollback workflow. The existing advanced interface editor remains linked
-   for manual WireGuard setup while the Agent is not integrated.
-3. **Firmware upgrade:** uses upstream LuCI's `system/flash` view, including its
-   image verification and upgrade flow. No parallel firmware upload backend.
+   rollback workflow. A read-only WireGuard list shows interface state, tunnel
+   IPv4 addresses, receive/send totals and sampled rates. It does not expose
+   an advanced interface editor.
+3. **Firmware upgrade:** a dedicated one-purpose page using LuCI's existing
+   authenticated upload, `validate_firmware_image` and `sysupgrade --test`
+   procedures. No factory reset, MTD writes, forced upgrades, or backups UI.
 4. **AirRoute Agent:** clearly labeled placeholder for future enrollment,
    WireGuard peer configuration and health monitoring; no Agent is bundled.
 
 The standard `luci-mod-admin-full` back-end views remain installed for
 development and recovery, but they are **not shown in the AirRelay navigation**.
-This is a UI simplification, **not** a new authorization boundary. The theme
-uses the official Bootstrap form styles as a compatibility fallback and keeps
-LuCI's existing login, ubus RPCs, CSRF protections and password warnings.
+This is a UI simplification, **not** a new authorization boundary. Only the
+standalone AirRelay skin is installed; it has independent login, form and
+upgrade styling, while preserving LuCI's existing authentication, RPCs and
+CSRF protections. English and complete Simplified Chinese translations are
+included. Switch languages at the top right; Chinese is the fresh-image default.
 
-If the custom theme cannot render after an upgrade, restore Bootstrap via SSH:
+If a preserved pre-AirRelay configuration points to a removed skin, repair the
+active theme through SSH:
 
 ```sh
-uci set luci.main.mediaurlbase='/luci-static/bootstrap'
+uci set luci.main.mediaurlbase='/luci-static/airrelay'
 uci commit luci
 /etc/init.d/uhttpd reload
 ```
@@ -132,7 +138,7 @@ revisions in `airrelay/feeds.conf`.
 ```sh
 cp airrelay/feeds.conf feeds.conf
 ./scripts/feeds update packages luci
-./scripts/feeds install -p luci luci-mod-admin-full luci-theme-bootstrap luci-proto-wireguard
+./scripts/feeds install -p luci luci-mod-admin-full luci-proto-wireguard
 
 bash airrelay/scripts/configure.sh md  # or: mf, in a separate clean checkout
 make download -j2

@@ -54,7 +54,7 @@ jobs:
         run: |
           cp airrelay/feeds.conf feeds.conf
           ./scripts/feeds update packages luci
-          ./scripts/feeds install -p luci luci-mod-admin-full luci-theme-bootstrap luci-proto-wireguard
+          ./scripts/feeds install -p luci luci-mod-admin-full luci-proto-wireguard
 
       - name: Validate AirRelay console sources
         run: |
@@ -65,9 +65,15 @@ jobs:
           python3 -m json.tool "$console/root/usr/share/luci/menu.d/airrelay-console.json" > /dev/null
           python3 -m json.tool "$console/root/usr/share/rpcd/acl.d/luci-theme-airrelay.json" > /dev/null
           sh -n "$console/root/etc/uci-defaults/95_luci-theme-airrelay"
-          for source in "$console"/htdocs/luci-static/resources/view/airrelay/*.js; do
+          for source in "$console"/htdocs/luci-static/resources/view/airrelay/*.js \
+                        "$console"/htdocs/luci-static/resources/airrelay/*.js; do
             node --check "$source"
           done
+          msgfmt --check --output-file=/dev/null "$console/po/zh_Hans/airrelay.po"
+          if grep -q '/luci-static/bootstrap' "$console/htdocs/luci-static/airrelay/cascade.css"; then
+            echo 'AirRelay skin must not import Bootstrap CSS' >&2
+            exit 1
+          fi
 
       - name: Prepare minimal firmware configuration
         run: bash airrelay/scripts/configure.sh "${{ matrix.device }}"
@@ -108,8 +114,8 @@ jobs:
           target_dir="bin/targets/airoha/${{ matrix.subtarget }}"
           cd "$target_dir"
           shopt -s nullglob
-          images=("openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb" \
-                  "openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb")
+          images=("airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb" \
+                  "airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb")
           for artifact in "${images[@]}"; do
             test -s "$artifact" || { echo "Missing image: $artifact" >&2; exit 1; }
           done
@@ -125,8 +131,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: |
-            bin/targets/airoha/${{ matrix.subtarget }}/openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb
-            bin/targets/airoha/${{ matrix.subtarget }}/openwrt-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb
+            bin/targets/airoha/${{ matrix.subtarget }}/airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-squashfs-sysupgrade.itb
+            bin/targets/airoha/${{ matrix.subtarget }}/airrelay-os-airoha-${{ matrix.subtarget }}-nokia_xg-040g-${{ matrix.model }}-ubi-initramfs-recovery.itb
             bin/targets/airoha/${{ matrix.subtarget }}/*.manifest
             bin/targets/airoha/${{ matrix.subtarget }}/airrelay-${{ matrix.model }}.config.buildinfo
             bin/targets/airoha/${{ matrix.subtarget }}/AIRRELAY-${{ matrix.model }}-SHA256SUMS

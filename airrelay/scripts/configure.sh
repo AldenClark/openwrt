@@ -36,6 +36,9 @@ for feature in \
     CONFIG_PACKAGE_luci-mod-admin-full \
     CONFIG_PACKAGE_luci-theme-airrelay \
     CONFIG_PACKAGE_luci-proto-wireguard \
+    CONFIG_LUCI_LANG_zh_Hans \
+    CONFIG_PACKAGE_luci-i18n-airrelay-zh-cn \
+    CONFIG_VERSIONOPT \
     CONFIG_BUSYBOX_CUSTOM \
     CONFIG_BUSYBOX_CONFIG_UDHCPC \
     CONFIG_BUSYBOX_CONFIG_NTPD; do
@@ -46,6 +49,7 @@ for feature in \
 done
 for feature in \
     CONFIG_PACKAGE_dnsmasq \
+    CONFIG_PACKAGE_luci-theme-bootstrap \
     CONFIG_PACKAGE_odhcp6c \
     CONFIG_KERNEL_DEBUG_INFO \
     CONFIG_BUSYBOX_CONFIG_UDHCPD \
@@ -57,5 +61,10 @@ for feature in \
         exit 1
     }
 done
+
+grep -qx 'CONFIG_VERSION_DIST="AirRelay OS"' .config || {
+    echo "AirRelay distribution branding was not retained by defconfig" >&2
+    exit 1
+}
 
 echo "AirRelay ${device^^} configuration ready. Review .config before building."

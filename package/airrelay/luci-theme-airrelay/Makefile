@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=AirRelay Console (minimal node UI)
-LUCI_DEPENDS:=+luci-base +luci-mod-admin-full +luci-theme-bootstrap +luci-proto-wireguard
+LUCI_DEPENDS:=+luci-base +luci-mod-admin-full +luci-proto-wireguard
 LUCI_PKGARCH:=all
 
 # Keep CSS variables and the small UI sources intact across pinned LuCI updates.

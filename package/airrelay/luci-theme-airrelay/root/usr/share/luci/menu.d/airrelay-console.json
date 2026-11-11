@@ -6,21 +6,21 @@
     "depends": { "acl": [ "luci-theme-airrelay" ] }
   },
   "admin/airrelay/overview": {
-    "title": "实时状态",
+    "title": "Live status",
     "order": 1,
     "action": { "type": "view", "path": "airrelay/overview" },
     "depends": { "acl": [ "luci-theme-airrelay" ] }
   },
   "admin/airrelay/network": {
-    "title": "网络设置",
+    "title": "Network settings",
     "order": 2,
     "action": { "type": "view", "path": "airrelay/network" },
     "depends": { "acl": [ "luci-mod-network-config" ] }
   },
   "admin/airrelay/upgrade": {
-    "title": "系统升级",
+    "title": "Firmware upgrade",
     "order": 3,
-    "action": { "type": "view", "path": "system/flash" },
+    "action": { "type": "view", "path": "airrelay/upgrade" },
     "depends": { "acl": [ "luci-mod-system-flash" ] }
   },
   "admin/airrelay/agent": {
